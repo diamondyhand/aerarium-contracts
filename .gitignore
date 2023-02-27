@@ -1,0 +1,23 @@
+__pycache__
+.history
+.hypothesis/
+build/
+reports/
+
+node_modules
+coverage
+coverage.json
+typechain-types
+.openzeppelin
+
+#Hardhat files
+cache
+artifacts
+envs/*
+!envs/.env.example
+.env.testnet
+.env.mainnet
+export/31337-frontend.json
+export/31337-api.json
+export/31337-verify.json
+export/31337-rdnt.json
