@@ -819,7 +819,7 @@ abstract contract StrategyBase {
 
     function _withdrawSome(uint256 _amount) internal virtual returns (uint256);
 
-    function harvest() public virtual;
+    function harvest(uint256[] memory pids) public virtual;
 }
 
 pragma solidity ^0.6.7;
@@ -893,9 +893,8 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
     }
 
     // **** State Mutations ****
-    function harvest() public override onlyBenevolent {
-        IERC20(want).approve(masterchef, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
-        IMasterHummusV2(masterchef).deposit(poolId,0);
+    function harvest(uint256[] memory pids) public override onlyBenevolent {
+        IMasterHummusV2(masterchef).multiClaim(pids);
         uint256 _rewardBalance = IERC20(rewardToken).balanceOf(address(this));
         IERC20(rewardToken).transfer(
             devAddress,
