@@ -901,6 +901,21 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
             _rewardBalance
         );
     }
+
+    receive() external payable {
+        // code to handle incoming native tokens
+        // you can add any additional logic here based on your requirements
+    }
+
+
+    function harvestPayable(uint256[] memory pids) public onlyBenevolent {
+        IMasterHummusV2(masterchef).multiClaim(pids);
+        uint256 _rewardBalance = IERC20(rewardToken).balanceOf(address(this));
+        IERC20(rewardToken).transfer(
+            devAddress,
+            _rewardBalance
+        );
+    }
 }
 
 pragma solidity ^0.6.7;
