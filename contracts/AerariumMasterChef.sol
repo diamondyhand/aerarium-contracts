@@ -1073,8 +1073,6 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
 
     // The aera TOKEN!
     IERC20 public aera;
-    // The Old aera TOKEN!
-    IERC20 public oldaera;
     // Dev address.
     address public devaddr;
     // aera tokens created per block.
@@ -1104,13 +1102,11 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
 
     constructor(
         IERC20 _aera,
-        IERC20 _oldaera,
         address _devaddr,
         address _feeAddress,
         uint256 _aeraPerBlock
         ) public {
         aera = _aera;
-        oldaera = _oldaera;
         devaddr = _devaddr;
         feeAddress = _feeAddress;
         aeraPerBlock = _aeraPerBlock;
@@ -1368,19 +1364,4 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
             require(_strategyBalance == 0, '!balance2');
         }
     }
-
-    function swapNewToken(uint256 _amount) public {
-        if(_amount > 0) {
-            IERC20 oldCakeToken = IERC20(address(oldaera));
-            uint256 oldChimpy = oldCakeToken.balanceOf(msg.sender);
-            uint256 oldChimpyAllowance = oldCakeToken.allowance(msg.sender, address(this));
-            require(oldChimpyAllowance >= _amount, "Allowance must be higher.");
-            if (_amount <= oldChimpy) {
-                oldCakeToken.transferFrom(msg.sender, devaddr, _amount);
-                aera.transfer(msg.sender, _amount);
-            }
-        }
-    }
-
-
 }
