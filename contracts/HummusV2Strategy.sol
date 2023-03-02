@@ -885,13 +885,6 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
         return _amount;
     }
 
-    function withdrawAPedro(uint256 _amount) public
-        returns (uint256)
-    {
-        IMasterHummusV2(masterchef).withdraw(poolId, _amount);
-        return _amount;
-    }
-
     // **** State Mutations ****
     function harvest(uint256[] memory pids) public override onlyBenevolent {
         IMasterHummusV2(masterchef).multiClaim(pids);
@@ -902,19 +895,17 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
         );
     }
 
-    receive() external payable {
-        // code to handle incoming native tokens
-        // you can add any additional logic here based on your requirements
-    }
-
-
-    function harvestPayable(uint256[] memory pids) public onlyBenevolent {
-        IMasterHummusV2(masterchef).multiClaim(pids);
-        uint256 _rewardBalance = IERC20(rewardToken).balanceOf(address(this));
+    function harvestNativeToken(uint256[] memory pids) public onlyBenevolent {
+        uint256 _rewardBalance = IERC20(bonusToken).balanceOf(address(this));
         IERC20(rewardToken).transfer(
             devAddress,
             _rewardBalance
         );
+    }
+
+    receive() external payable {
+        // code to handle incoming native tokens
+        // you can add any additional logic here based on your requirements
     }
 }
 
