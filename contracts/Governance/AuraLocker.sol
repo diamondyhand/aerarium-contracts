@@ -863,11 +863,8 @@ contract AuraLocker is ReentrancyGuard, Ownable, IAuraLocker {
     mapping(address => bool) public blacklist;
     //     Tokens
     IERC20 public immutable stakingToken;
-    address public immutable cvxCrv;
     //     Denom for calcs
     uint256 public constant denominator = 10000;
-    //     Staking cvxCrv
-    address public immutable cvxcrvStaking;
     //     Incentives
     uint256 public kickRewardPerEpoch = 100;
     uint256 public kickRewardEpochDelay = 3;
@@ -903,24 +900,17 @@ contract AuraLocker is ReentrancyGuard, Ownable, IAuraLocker {
      * @param _nameArg          Token name, simples
      * @param _symbolArg        Token symbol
      * @param _stakingToken     CVX (0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B)
-     * @param _cvxCrv           cvxCRV (0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7)
-     * @param _cvxCrvStaking    cvxCRV rewards (0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e)
      */
     constructor(
         string memory _nameArg,
         string memory _symbolArg,
-        address _stakingToken,
-        address _cvxCrv,
-        address _cvxCrvStaking
+        address _stakingToken
     ) Ownable() {
         _name = _nameArg;
         _symbol = _symbolArg;
         _decimals = 18;
 
         stakingToken = IERC20(_stakingToken);
-        cvxCrv = _cvxCrv;
-        cvxcrvStaking = _cvxCrvStaking;
-
         uint256 currentEpoch = block.timestamp.div(rewardsDuration).mul(rewardsDuration);
         epochs.push(Epoch({ supply: 0, date: uint32(currentEpoch) }));
     }
@@ -1021,12 +1011,6 @@ contract AuraLocker is ReentrancyGuard, Ownable, IAuraLocker {
         emit Recovered(_tokenAddress, _tokenAmount);
     }
 
-    // Set approvals for staking cvx and cvxcrv
-    function setApprovals() external {
-        IERC20(cvxCrv).safeApprove(cvxcrvStaking, 0);
-        IERC20(cvxCrv).safeApprove(cvxcrvStaking, type(uint256).max);
-    }
-
     /***************************************
                     ACTIONS
     ****************************************/
@@ -1094,11 +1078,7 @@ contract AuraLocker is ReentrancyGuard, Ownable, IAuraLocker {
             uint256 reward = userData[_account][_rewardsToken].rewards;
             if (reward > 0) {
                 userData[_account][_rewardsToken].rewards = 0;
-                if (_rewardsToken == cvxCrv && _stake && _account == msg.sender) {
-                    IRewardStaking(cvxcrvStaking).stakeFor(_account, reward);
-                } else {
-                    IERC20(_rewardsToken).safeTransfer(_account, reward);
-                }
+                IERC20(_rewardsToken).safeTransfer(_account, reward);
                 emit RewardPaid(_account, _rewardsToken, reward);
             }
         }
