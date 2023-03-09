@@ -774,12 +774,28 @@ abstract contract Ownable is Context {
     }
 }
 
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
+
+import { IERC20 } from "@openzeppelin/contracts-0.8/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts-0.8/token/ERC20/utils/SafeERC20.sol";
+import { Ownable } from "@openzeppelin/contracts-0.8/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts-0.8/security/ReentrancyGuard.sol";
+import { AuraMath, AuraMath32, AuraMath112, AuraMath224 } from "./AuraMath.sol";
+import "./Interfaces.sol";
 
 interface IRewardStaking {
     function stakeFor(address, uint256) external;
 }
 
+/**
+ * @title   AuraLocker
+ * @author  ConvexFinance
+ * @notice  Effectively allows for rolling 16 week lockups of CVX, and provides balances available
+ *          at each epoch (1 week). Also receives cvxCrv from `CvxStakingProxy` and redistributes
+ *          to depositors.
+ * @dev     Invdividual and delegatee vote power lookups both use independent accounting mechanisms.
+ */
 contract AuraLocker is ReentrancyGuard, Ownable, IAuraLocker {
     using AuraMath for uint256;
     using AuraMath224 for uint224;
@@ -863,8 +879,10 @@ contract AuraLocker is ReentrancyGuard, Ownable, IAuraLocker {
     mapping(address => bool) public blacklist;
     //     Tokens
     IERC20 public immutable stakingToken;
+    address public immutable cvxCrv;
     //     Denom for calcs
     uint256 public constant denominator = 10000;
+
     //     Incentives
     uint256 public kickRewardPerEpoch = 100;
     uint256 public kickRewardEpochDelay = 3;
@@ -900,17 +918,22 @@ contract AuraLocker is ReentrancyGuard, Ownable, IAuraLocker {
      * @param _nameArg          Token name, simples
      * @param _symbolArg        Token symbol
      * @param _stakingToken     CVX (0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B)
+     * @param _cvxCrv           cvxCRV (0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7)
+     * @param _cvxCrvStaking    cvxCRV rewards (0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e)
      */
     constructor(
         string memory _nameArg,
         string memory _symbolArg,
-        address _stakingToken
-    ) Ownable() {
+        address _stakingToken,
+        address _cvxCrv
+        ) Ownable() {
         _name = _nameArg;
         _symbol = _symbolArg;
         _decimals = 18;
 
         stakingToken = IERC20(_stakingToken);
+        cvxCrv = _cvxCrv;
+
         uint256 currentEpoch = block.timestamp.div(rewardsDuration).mul(rewardsDuration);
         epochs.push(Epoch({ supply: 0, date: uint32(currentEpoch) }));
     }
@@ -1079,6 +1102,7 @@ contract AuraLocker is ReentrancyGuard, Ownable, IAuraLocker {
             if (reward > 0) {
                 userData[_account][_rewardsToken].rewards = 0;
                 IERC20(_rewardsToken).safeTransfer(_account, reward);
+                }
                 emit RewardPaid(_account, _rewardsToken, reward);
             }
         }

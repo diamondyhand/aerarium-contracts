@@ -23,18 +23,18 @@ contract TokenSwap {
         uint256 newTokenAmount = oldTokenAmount * swapRatio;
         require(newTokenAmount > 0, "Amount of new tokens must be greater than zero.");
         require(oldToken.transferFrom(msg.sender, address(this), oldTokenAmount), "Failed to transfer old tokens.");
-        require(newToken.transfer(msg.sender, newTokenAmount), "Failed to transfer new tokens.");
+        require(newToken.transferFrom(address(this),address(msg.sender), newTokenAmount), "Failed to transfer new tokens.");
     }
 
     function withdrawOldTokens() public {
         require(msg.sender == owner, "Only the contract owner can withdraw old tokens.");
         uint256 balance = oldToken.balanceOf(address(this));
-        require(oldToken.transfer(owner, balance), "Failed to transfer old tokens.");
+        require(oldToken.transferFrom(address(this), owner, balance), "Failed to transfer old tokens.");
     }
 
     function withdrawNewTokens() public {
         require(msg.sender == owner, "Only the contract owner can withdraw new tokens.");
         uint256 balance = newToken.balanceOf(address(this));
-        require(newToken.transfer(owner, balance), "Failed to transfer new tokens.");
+        require(newToken.transferFrom(address(this), owner, balance), "Failed to transfer new tokens.");
     }
 }
