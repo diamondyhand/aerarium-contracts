@@ -1,5 +1,3 @@
-pragma solidity ^0.8.0;
-
 /**
  * @dev Provides information about the current execution context, including the
  * sender of the transaction and its data. While these are generally available
@@ -19,8 +17,6 @@ abstract contract Context {
         return msg.data;
     }
 }
-
-pragma solidity ^0.8.0;
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
@@ -99,8 +95,6 @@ interface IERC20 {
      */
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
-
-pragma solidity ^0.8.0;
 
 /**
  * @dev Collection of functions related to the address type
@@ -315,8 +309,6 @@ library Address {
     }
 }
 
-pragma solidity 0.8.11;
-
 interface IPriceOracle {
     struct OracleAverageQuery {
         Variable variable;
@@ -459,8 +451,6 @@ interface ICrvDepositorWrapper {
     ) external;
 }
 
-pragma solidity 0.8.11;
-
 /// @notice A library for performing overflow-/underflow-safe math,
 /// updated with awesomeness from of DappHub (https://github.com/dapphub/ds-math).
 library AuraMath {
@@ -547,8 +537,6 @@ library AuraMath224 {
     }
 }
 
-pragma solidity ^0.8.0;
-
 /**
  * @dev Contract module that helps prevent reentrant calls to a function.
  *
@@ -607,8 +595,6 @@ abstract contract ReentrancyGuard {
         _status = _NOT_ENTERED;
     }
 }
-
-pragma solidity ^0.8.0;
 
 /**
  * @title SafeERC20
@@ -702,8 +688,6 @@ library SafeERC20 {
     }
 }
 
-pragma solidity ^0.8.0;
-
 /**
  * @dev Contract module which provides a basic access control mechanism, where
  * there is an account (an owner) that can be granted exclusive access to
@@ -776,13 +760,6 @@ abstract contract Ownable is Context {
 
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
-
-import { IERC20 } from "@openzeppelin/contracts-0.8/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts-0.8/token/ERC20/utils/SafeERC20.sol";
-import { Ownable } from "@openzeppelin/contracts-0.8/access/Ownable.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts-0.8/security/ReentrancyGuard.sol";
-import { AuraMath, AuraMath32, AuraMath112, AuraMath224 } from "./AuraMath.sol";
-import "./Interfaces.sol";
 
 interface IRewardStaking {
     function stakeFor(address, uint256) external;
@@ -1102,7 +1079,6 @@ contract AuraLocker is ReentrancyGuard, Ownable, IAuraLocker {
             if (reward > 0) {
                 userData[_account][_rewardsToken].rewards = 0;
                 IERC20(_rewardsToken).safeTransfer(_account, reward);
-                }
                 emit RewardPaid(_account, _rewardsToken, reward);
             }
         }
