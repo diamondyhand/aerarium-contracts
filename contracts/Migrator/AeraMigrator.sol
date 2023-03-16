@@ -1,40 +1,121 @@
+pragma solidity 0.8.11;
+
+/**
+ * @dev Interface of the ERC20 standard as defined in the EIP.
+ */
+interface IERC20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount)
+    external
+    returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender)
+    external
+    view
+    returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
+}
+        
 pragma solidity ^0.8.0;
 
-interface ERC20 {
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-    function balanceOf(address account) external view returns (uint256);
-}
-
 contract TokenSwap {
-    ERC20 public oldToken;
-    ERC20 public newToken;
+    IERC20 public oldToken;
+    IERC20 public newToken;
     address public owner;
-    uint256 public swapRatio;
+    address public receiver;
 
-    constructor(address _oldTokenAddress, address _newTokenAddress, uint256 _swapRatio) {
-        oldToken = ERC20(_oldTokenAddress);
-        newToken = ERC20(_newTokenAddress);
+    constructor(address  _oldTokenAddress, address _newTokenAddress, address _receiver) {
+        oldToken = IERC20(_oldTokenAddress);
+        newToken = IERC20(_newTokenAddress);
         owner = msg.sender;
-        swapRatio = _swapRatio;
+        receiver = _receiver;
     }
 
-    function swap() public {
-        uint256 oldTokenAmount = oldToken.balanceOf(msg.sender);
-        uint256 newTokenAmount = oldTokenAmount * swapRatio;
-        require(newTokenAmount > 0, "Amount of new tokens must be greater than zero.");
-        require(oldToken.transferFrom(msg.sender, address(this), oldTokenAmount), "Failed to transfer old tokens.");
-        require(newToken.transferFrom(address(this),address(msg.sender), newTokenAmount), "Failed to transfer new tokens.");
+    function balance() public view returns(uint256) {
+       uint256 oldTokenAmount = oldToken.balanceOf(address(msg.sender));
+       return oldTokenAmount;
     }
 
-    function withdrawOldTokens() public {
-        require(msg.sender == owner, "Only the contract owner can withdraw old tokens.");
-        uint256 balance = oldToken.balanceOf(address(this));
-        require(oldToken.transferFrom(address(this), owner, balance), "Failed to transfer old tokens.");
+    function swap(uint256 _amount) public {
+        require(oldToken.allowance(msg.sender, address(this)) >= _amount, "Token allowance not enough");
+        require(oldToken.transferFrom(msg.sender, receiver, _amount), "Failed to transfer old tokens.");
+        require(newToken.transfer(msg.sender, _amount), "Failed to transfer new tokens.");
     }
 
-    function withdrawNewTokens() public {
-        require(msg.sender == owner, "Only the contract owner can withdraw new tokens.");
-        uint256 balance = newToken.balanceOf(address(this));
-        require(newToken.transferFrom(address(this), owner, balance), "Failed to transfer new tokens.");
-    }
+    function withdrawNewTokens(uint256 _amount) public {
+    require(msg.sender == owner, "Only the contract owner can withdraw new tokens.");
+    require(newToken.transfer(msg.sender, _amount), "Failed to transfer new tokens.");
+
+}
 }
