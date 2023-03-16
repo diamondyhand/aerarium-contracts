@@ -79,7 +79,7 @@ contract aeHUM is ERC20("Aerarium Hummus Token", "aeHUM"), AccessControl, Ownabl
     uint256 public aeraPerBlock; 
     uint256 public totalAllocPoint = 0;
 
-    uint256 public totalAmountOfSupplyStaked = 0; // total WAVE locked in pools
+    uint256 public totalAmountOfSupplyStaked = 0; // total AERA locked in pools
 
     uint256 private constant ACC_AERA_PRECISION = 1e12; // Precision for accumulating AERA
     uint256 public constant POOL_PERCENTAGE = 0.876e3; // Percentage of AERA allocated to pools
@@ -88,8 +88,8 @@ contract aeHUM is ERC20("Aerarium Hummus Token", "aeHUM"), AccessControl, Ownabl
     uint256 public farmPid; // ID for the farming pool
     uint256 public constant DENOMINATOR = 1e3; // Constant denominator for calculating allocation points
 
-    IERC20 public hum; // veWave ERC721 token
-    IERC20 public wave; // AERA ERC20 token
+    IERC20 public hum; // veAera ERC721 token
+    IERC20 public aera; // AERA ERC20 token
 
     address public vuhum;
 
@@ -104,25 +104,25 @@ contract aeHUM is ERC20("Aerarium Hummus Token", "aeHUM"), AccessControl, Ownabl
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
 
     constructor(
-        IERC20 _hum, // veWave ERC721 token
-        IERC20 _wave, // AERA ERC20 token
+        IERC20 _hum, // veAera ERC721 token
+        IERC20 _aera, // AERA ERC20 token
         address _vuhum,
         IMasterChef _chef, // MasterChef contract for controlling distribution
         uint256 _farmPid
     ) {
-        require(address(_hum) != address(0), "invalid veWave's address");
-        require(address(_wave) != address(0), "invalid wave's address");
+        require(address(_hum) != address(0), "invalid veAera's address");
+        require(address(_aera) != address(0), "invalid aera's address");
         require(address(_chef) != address(0), "invalid master chef's address");
         hum = _hum;
         vuhum = _vuhum;
-        wave = _wave;
+        aera = _aera;
         chef = _chef;
         farmPid = _farmPid;
     }
 
     // Function to deposit veAERA token to the contract and receive rewards
     function depositToChef(uint256 _pid, uint256 amount) external {
-        // Wave Rewards attributes
+        // Aera Rewards attributes
         PoolInfo memory pool = updatePool(_pid);
         UserInfo storage user = userInfo[_pid][msg.sender];
 
@@ -149,7 +149,7 @@ contract aeHUM is ERC20("Aerarium Hummus Token", "aeHUM"), AccessControl, Ownabl
         /******************** AERA Rewards Code ********************/
         chef.withdraw(farmPid, amount); 
         transferFrom(address(this), address(msg.sender),amount);
-        totalAmountOfSupplyStaked = totalAmountOfSupplyStaked - amount; // amount of lockedWave on the contract - amount of locked Wave of that veWAVE
+        totalAmountOfSupplyStaked = totalAmountOfSupplyStaked - amount; // amount of lockedAera on the contract - amount of locked Aera of that veAERA
         uint256 accumulatedAERA = (user.amount * pool.accAERAPerShare) / ACC_AERA_PRECISION;
         uint256 eligibleAERA = accumulatedAERA - user.rewardDebt;
         user.amount = user.amount - amount; // put user amount of UserInfo a zero
@@ -195,18 +195,18 @@ contract aeHUM is ERC20("Aerarium Hummus Token", "aeHUM"), AccessControl, Ownabl
         if (block.number > pool.lastRewardBlock) {
             if (totalAmountOfSupplyStaked > 0) {
                 uint256 blocksSinceLastReward = block.number - pool.lastRewardBlock;
-                uint256 waveRewards = (blocksSinceLastReward * aeraPerBlock * pool.allocPoint) / totalAllocPoint;
-                uint256 waveRewardsForPool = (waveRewards * POOL_PERCENTAGE) / DENOMINATOR;
+                uint256 aeraRewards = (blocksSinceLastReward * aeraPerBlock * pool.allocPoint) / totalAllocPoint;
+                uint256 aeraRewardsForPool = (aeraRewards * POOL_PERCENTAGE) / DENOMINATOR;
                 pool.accAERAPerShare =
                     pool.accAERAPerShare +
-                    ((waveRewardsForPool * ACC_AERA_PRECISION) / totalAmountOfSupplyStaked);
+                    ((aeraRewardsForPool * ACC_AERA_PRECISION) / totalAmountOfSupplyStaked);
             }
             pool.lastRewardBlock = block.number;
             poolInfo[_pid] = pool;
         }
     }
 
-    function pendingWave(
+    function pendingAera(
         uint256 _pid,
         address _user
     ) external view returns (uint256 pending) {
@@ -216,21 +216,21 @@ contract aeHUM is ERC20("Aerarium Hummus Token", "aeHUM"), AccessControl, Ownabl
 
         if (block.number > pool.lastRewardBlock && totalAmountOfSupplyStaked > 0) {
             uint256 blocksSinceLastReward = block.number - pool.lastRewardBlock;
-            uint256 waveRewards = (blocksSinceLastReward * aeraPerBlock * pool.allocPoint) / totalAllocPoint;
+            uint256 aeraRewards = (blocksSinceLastReward * aeraPerBlock * pool.allocPoint) / totalAllocPoint;
 
-            uint256 waveRewardsForPool = (waveRewards * POOL_PERCENTAGE) / DENOMINATOR;
+            uint256 aeraRewardsForPool = (aeraRewards * POOL_PERCENTAGE) / DENOMINATOR;
 
-            accAERAPerShare = accAERAPerShare + ((waveRewardsForPool * ACC_AERA_PRECISION) / totalAmountOfSupplyStaked);
+            accAERAPerShare = accAERAPerShare + ((aeraRewardsForPool * ACC_AERA_PRECISION) / totalAmountOfSupplyStaked);
         }
         pending = (user.amount * accAERAPerShare) / ACC_AERA_PRECISION - user.rewardDebt;
     }
 
     function safeAERATransfer(address _to, uint256 _amount) internal {
-        uint256 waveBalance = wave.balanceOf(address(this));
-        if (_amount > waveBalance) {
-            wave.transfer(_to, waveBalance);
+        uint256 aeraBalance = aera.balanceOf(address(this));
+        if (_amount > aeraBalance) {
+            aera.transfer(_to, aeraBalance);
         } else {
-            wave.transfer(_to, _amount);
+            aera.transfer(_to, _amount);
         }
     }
 
@@ -238,7 +238,6 @@ contract aeHUM is ERC20("Aerarium Hummus Token", "aeHUM"), AccessControl, Ownabl
     }
 
     function updateEmissionRate(uint256 _aeraPerBlock) public onlyOwner {
-        require(_aeraPerBlock <= 6e18, "maximum emission rate of 6 anothertoken per block exceeded");
         aeraPerBlock = _aeraPerBlock;
     }
 
