@@ -1,218 +1,8 @@
-pragma solidity ^0.8.0;
-
 /**
- * @dev Collection of functions related to the address type
- */
-library Address {
-    /**
-     * @dev Returns true if `account` is a contract.
-     *
-     * [IMPORTANT]
-     * ====
-     * It is unsafe to assume that an address for which this function returns
-     * false is an externally-owned account (EOA) and not a contract.
-     *
-     * Among others, `isContract` will return false for the following
-     * types of addresses:
-     *
-     *  - an externally-owned account
-     *  - a contract in construction
-     *  - an address where a contract will be created
-     *  - an address where a contract lived, but was destroyed
-     * ====
-     */
-    function isContract(address account) internal view returns (bool) {
-        // This method relies on extcodesize, which returns 0 for contracts in
-        // construction, since the code is only stored at the end of the
-        // constructor execution.
+ *Submitted for verification at FtmScan.com on 2022-02-10
+*/
 
-        uint256 size;
-        assembly {
-            size := extcodesize(account)
-        }
-        return size > 0;
-    }
-
-    /**
-     * @dev Replacement for Solidity's `transfer`: sends `amount` wei to
-     * `recipient`, forwarding all available gas and reverting on errors.
-     *
-     * https://eips.ethereum.org/EIPS/eip-1884[EIP1884] increases the gas cost
-     * of certain opcodes, possibly making contracts go over the 2300 gas limit
-     * imposed by `transfer`, making them unable to receive funds via
-     * `transfer`. {sendValue} removes this limitation.
-     *
-     * https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/[Learn more].
-     *
-     * IMPORTANT: because control is transferred to `recipient`, care must be
-     * taken to not create reentrancy vulnerabilities. Consider using
-     * {ReentrancyGuard} or the
-     * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
-     */
-    function sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "Address: insufficient balance");
-
-        (bool success, ) = recipient.call{value: amount}("");
-        require(success, "Address: unable to send value, recipient may have reverted");
-    }
-
-    /**
-     * @dev Performs a Solidity function call using a low level `call`. A
-     * plain `call` is an unsafe replacement for a function call: use this
-     * function instead.
-     *
-     * If `target` reverts with a revert reason, it is bubbled up by this
-     * function (like regular Solidity function calls).
-     *
-     * Returns the raw returned data. To convert to the expected return value,
-     * use https://solidity.readthedocs.io/en/latest/units-and-global-variables.html?highlight=abi.decode#abi-encoding-and-decoding-functions[`abi.decode`].
-     *
-     * Requirements:
-     *
-     * - `target` must be a contract.
-     * - calling `target` with `data` must not revert.
-     *
-     * _Available since v3.1._
-     */
-    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
-        return functionCall(target, data, "Address: low-level call failed");
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`], but with
-     * `errorMessage` as a fallback revert reason when `target` reverts.
-     *
-     * _Available since v3.1._
-     */
-    function functionCall(
-        address target,
-        bytes memory data,
-        string memory errorMessage
-    ) internal returns (bytes memory) {
-        return functionCallWithValue(target, data, 0, errorMessage);
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
-     * but also transferring `value` wei to `target`.
-     *
-     * Requirements:
-     *
-     * - the calling contract must have an ETH balance of at least `value`.
-     * - the called Solidity function must be `payable`.
-     *
-     * _Available since v3.1._
-     */
-    function functionCallWithValue(
-        address target,
-        bytes memory data,
-        uint256 value
-    ) internal returns (bytes memory) {
-        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCallWithValue-address-bytes-uint256-}[`functionCallWithValue`], but
-     * with `errorMessage` as a fallback revert reason when `target` reverts.
-     *
-     * _Available since v3.1._
-     */
-    function functionCallWithValue(
-        address target,
-        bytes memory data,
-        uint256 value,
-        string memory errorMessage
-    ) internal returns (bytes memory) {
-        require(address(this).balance >= value, "Address: insufficient balance for call");
-        require(isContract(target), "Address: call to non-contract");
-
-        (bool success, bytes memory returndata) = target.call{value: value}(data);
-        return verifyCallResult(success, returndata, errorMessage);
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
-     * but performing a static call.
-     *
-     * _Available since v3.3._
-     */
-    function functionStaticCall(address target, bytes memory data) internal view returns (bytes memory) {
-        return functionStaticCall(target, data, "Address: low-level static call failed");
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],
-     * but performing a static call.
-     *
-     * _Available since v3.3._
-     */
-    function functionStaticCall(
-        address target,
-        bytes memory data,
-        string memory errorMessage
-    ) internal view returns (bytes memory) {
-        require(isContract(target), "Address: static call to non-contract");
-
-        (bool success, bytes memory returndata) = target.staticcall(data);
-        return verifyCallResult(success, returndata, errorMessage);
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
-     * but performing a delegate call.
-     *
-     * _Available since v3.4._
-     */
-    function functionDelegateCall(address target, bytes memory data) internal returns (bytes memory) {
-        return functionDelegateCall(target, data, "Address: low-level delegate call failed");
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],
-     * but performing a delegate call.
-     *
-     * _Available since v3.4._
-     */
-    function functionDelegateCall(
-        address target,
-        bytes memory data,
-        string memory errorMessage
-    ) internal returns (bytes memory) {
-        require(isContract(target), "Address: delegate call to non-contract");
-
-        (bool success, bytes memory returndata) = target.delegatecall(data);
-        return verifyCallResult(success, returndata, errorMessage);
-    }
-
-    /**
-     * @dev Tool to verifies that a low level call was successful, and revert if it wasn't, either by bubbling the
-     * revert reason using the provided one.
-     *
-     * _Available since v4.3._
-     */
-    function verifyCallResult(
-        bool success,
-        bytes memory returndata,
-        string memory errorMessage
-    ) internal pure returns (bytes memory) {
-        if (success) {
-            return returndata;
-        } else {
-            // Look for revert reason and bubble it up if present
-            if (returndata.length > 0) {
-                // The easiest way to bubble the revert reason is using memory via assembly
-
-                assembly {
-                    let returndata_size := mload(returndata)
-                    revert(add(32, returndata), returndata_size)
-                }
-            } else {
-                revert(errorMessage);
-            }
-        }
-    }
-}
-
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
 /**
@@ -504,84 +294,30 @@ interface IERC721Metadata is IERC721 {
 /**
 * @dev Interface of the ERC20 standard as defined in the EIP.
 */
-pragma solidity ^0.8.0;
-
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
 interface IERC20 {
     /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
+    * @dev Moves `amount` tokens from the caller's account to `recipient`.
+    *
+    * Returns a boolean value indicating whether the operation succeeded.
+    *
+    * Emits a {Transfer} event.
+    */
+    function transfer(address recipient, uint amount) external returns (bool);
 
     /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
+    * @dev Moves `amount` tokens from `sender` to `recipient` using the
+    * allowance mechanism. `amount` is then deducted from the caller's
+    * allowance.
+    *
+    * Returns a boolean value indicating whether the operation succeeded.
+    *
+    * Emits a {Transfer} event.
+    */
     function transferFrom(
         address sender,
         address recipient,
-        uint256 amount
+        uint amount
     ) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
 struct Point {
@@ -599,150 +335,7 @@ struct LockedBalance {
     uint end;
 }
 
-pragma solidity ^0.8.0;
-
-/**
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view virtual returns (bytes calldata) {
-        return msg.data;
-    }
-}
-
-pragma solidity ^0.8.0;
-
-/**
- * @dev Interface for the optional metadata functions from the ERC20 standard.
- *
- * _Available since v4.1._
- */
-interface IERC20Metadata is IERC20 {
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() external view returns (string memory);
-
-    /**
-     * @dev Returns the symbol of the token.
-     */
-    function symbol() external view returns (string memory);
-
-    /**
-     * @dev Returns the decimals places of the token.
-     */
-    function decimals() external view returns (uint8);
-}
-
-pragma solidity ^0.8.0;
-
-
-/**
- * @title SafeERC20
- * @dev Wrappers around ERC20 operations that throw on failure (when the token
- * contract returns false). Tokens that return no value (and instead revert or
- * throw on failure) are also supported, non-reverting calls are assumed to be
- * successful.
- * To use this library you can add a `using SafeERC20 for IERC20;` statement to your contract,
- * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
- */
-library SafeERC20 {
-    using Address for address;
-
-    function safeTransfer(
-        IERC20 token,
-        address to,
-        uint256 value
-    ) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
-    }
-
-    function safeTransferFrom(
-        IERC20 token,
-        address from,
-        address to,
-        uint256 value
-    ) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
-    }
-
-    /**
-     * @dev Deprecated. This function has issues similar to the ones found in
-     * {IERC20-approve}, and its usage is discouraged.
-     *
-     * Whenever possible, use {safeIncreaseAllowance} and
-     * {safeDecreaseAllowance} instead.
-     */
-    function safeApprove(
-        IERC20 token,
-        address spender,
-        uint256 value
-    ) internal {
-        // safeApprove should only be called when setting an initial allowance,
-        // or when resetting it to zero. To increase and decrease it, use
-        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
-        require(
-            (value == 0) || (token.allowance(address(this), spender) == 0),
-            "SafeERC20: approve from non-zero to non-zero allowance"
-        );
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
-    }
-
-    function safeIncreaseAllowance(
-        IERC20 token,
-        address spender,
-        uint256 value
-    ) internal {
-        uint256 newAllowance = token.allowance(address(this), spender) + value;
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
-    }
-
-    function safeDecreaseAllowance(
-        IERC20 token,
-        address spender,
-        uint256 value
-    ) internal {
-        unchecked {
-            uint256 oldAllowance = token.allowance(address(this), spender);
-            require(oldAllowance >= value, "SafeERC20: decreased allowance below zero");
-            uint256 newAllowance = oldAllowance - value;
-            _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
-        }
-    }
-
-    /**
-     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
-     * on the return value: the return value is optional (but if data is returned, it must not be false).
-     * @param token The token targeted by the call.
-     * @param data The call data (encoded using abi.encode or one of its variants).
-     */
-    function _callOptionalReturn(IERC20 token, bytes memory data) private {
-        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
-        // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
-        // the target address contains contract code and also asserts for success in the low-level call.
-
-        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
-        if (returndata.length > 0) {
-            // Return data is optional
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
-        }
-    }
-}
-
 contract ve is IERC721, IERC721Metadata {
-    using SafeERC20 for IERC20;
-
     enum DepositType {
         DEPOSIT_FOR_TYPE,
         CREATE_LOCK_TYPE,
@@ -759,24 +352,14 @@ contract ve is IERC721, IERC721Metadata {
         DepositType deposit_type,
         uint ts
     );
-     event Enter(
-        address indexed user,
-        uint256 vestingInAmount,
-        uint256 mintedAmount
-    );
-    event Leave(
-        address indexed user,
-        uint256 vestingOutAmount,
-        uint256 burnedAmount
-    );
-    event ShareRevenue(uint256 amount);
     event Withdraw(address indexed provider, uint tokenId, uint value, uint ts);
     event Supply(uint prevSupply, uint supply);
 
     uint internal constant WEEK = 1 weeks;
-    uint internal constant MAXTIME = 1 * 365 * 86400;
-    int128 internal constant iMAXTIME = 1 * 365 * 86400;
+    uint internal constant MAXTIME = 4 * 365 * 86400;
+    int128 internal constant iMAXTIME = 4 * 365 * 86400;
     uint internal constant MULTIPLIER = 1 ether;
+
     address immutable public token;
     uint public supply;
     mapping(uint => LockedBalance) public locked;
@@ -785,7 +368,7 @@ contract ve is IERC721, IERC721Metadata {
 
     uint public epoch;
     mapping(uint => Point) public point_history; // epoch -> unsigned point
-    mapping(uint => Point[1_000_000_000]) public user_point_history; // user -> Point[user_epoch]
+    mapping(uint => Point[1000000000]) public user_point_history; // user -> Point[user_epoch]
 
     mapping(uint => uint) public user_point_epoch;
     mapping(uint => int128) public slope_changes; // time -> signed slope change
@@ -794,8 +377,8 @@ contract ve is IERC721, IERC721Metadata {
     mapping(uint => bool) public voted;
     address public voter;
 
-    string constant public name = "AeraFractal";
-    string constant public symbol = "AeraFractal";
+    string constant public name = "veNFT";
+    string constant public symbol = "veNFT";
     string constant public version = "1.0.0";
     uint8 constant public decimals = 18;
 
@@ -1327,13 +910,11 @@ contract ve is IERC721, IERC721Metadata {
     /// @notice Deposit and lock tokens for a user
     /// @param _tokenId NFT that holds lock
     /// @param _value Amount to deposit
-    /// @param unlock_time New time when to unlock the tokens, or 0 if unchanged
     /// @param locked_balance Previous locked amount / timestamp
     /// @param deposit_type The type of deposit
     function _deposit_for(
         uint _tokenId,
         uint _value,
-        uint unlock_time,
         LockedBalance memory locked_balance,
         DepositType deposit_type
     ) internal {
@@ -1345,9 +926,6 @@ contract ve is IERC721, IERC721Metadata {
         (old_locked.amount, old_locked.end) = (_locked.amount, _locked.end);
         // Adding to existing lock, or if a lock is expired - creating a new one
         _locked.amount += int128(int256(_value));
-        if (unlock_time != 0) {
-            _locked.end = unlock_time;
-        }
         locked[_tokenId] = _locked;
 
         // Possibilities:
@@ -1404,7 +982,7 @@ contract ve is IERC721, IERC721Metadata {
         locked[_from] = LockedBalance(0, 0);
         _checkpoint(_from, _locked0, LockedBalance(0, 0));
         _burn(_from);
-        _deposit_for(_to, value0, end, _locked1, DepositType.MERGE_TYPE);
+        _deposit_for(_to, value0, _locked1, DepositType.MERGE_TYPE);
     }
 
     function block_number() external view returns (uint) {
@@ -1416,93 +994,46 @@ contract ve is IERC721, IERC721Metadata {
         _checkpoint(0, LockedBalance(0, 0), LockedBalance(0, 0));
     }
 
-    /// @notice Deposit `_value` tokens for `_to` and lock for `_lock_duration`
-    /// @param _value Amount to deposit
-    /// @param _lock_duration Number of seconds to lock tokens for (rounded down to nearest week)
-    /// @param _to Address to deposit
-    function _create_lock(uint _value, uint _lock_duration, address _to) internal returns (uint) {
-        uint unlock_time = (block.timestamp + _lock_duration) / WEEK * WEEK; // Locktime is rounded down to weeks
-
-        uint256 totalLockedTokenSupply = IERC20(token).balanceOf(address(this));
-        uint256 totalFreshBeets = totalSupply();
-        uint256 mintAmount;
-            // If no fBeets exists, mint it 1:1 to the amount put in
-            if (totalFreshBeets == 0 || totalLockedTokenSupply == 0) {
-                mintAmount = _value;
-            }
-            // Calculate and mint the amount of fBeets the blp is worth. The ratio will change overtime
-            else {
-                uint256 shareOfFreshBeets = (_value * totalFreshBeets) /
-                    totalLockedTokenSupply;
-
-                mintAmount = shareOfFreshBeets;
-            }
+    /// @notice Deposit `_value` tokens for `_tokenId` and add to the lock
+    /// @dev Anyone (even a smart contract) can deposit for someone else, but
+    ///      cannot extend their locktime and deposit for a brand new user
+    /// @param _tokenId lock NFT
+    /// @param _value Amount to add to user's lock
+    function deposit_for(uint _tokenId, uint _value) external nonreentrant {
+        LockedBalance memory _locked = locked[_tokenId];
 
         require(_value > 0); // dev: need non-zero value
-        require(unlock_time > block.timestamp, 'Can only lock until time in the future');
-        require(unlock_time <= block.timestamp + MAXTIME, 'Voting lock can be 6 months max');
+        require(_locked.amount > 0, 'No existing lock found');
+        require(_locked.end > block.timestamp, 'Cannot add to expired lock. Withdraw');
+        _deposit_for(_tokenId, _value, _locked, DepositType.DEPOSIT_FOR_TYPE);
+    }
+
+    /// @notice Deposit `_value` tokens for `_to` and lock for `_lock_duration`
+    /// @param _value Amount to deposit
+    /// @param _to Address to deposit
+    function _create_lock(uint _value, address _to) internal returns (uint) {
+
+        require(_value > 0); // dev: need non-zero value
 
         ++tokenId;
         uint _tokenId = tokenId;
         _mint(_to, _tokenId);
 
-        _deposit_for(_tokenId, _value, unlock_time, locked[_tokenId], DepositType.CREATE_LOCK_TYPE);
+        _deposit_for(_tokenId, _value, locked[_tokenId], DepositType.CREATE_LOCK_TYPE);
         return _tokenId;
+    }
 
-        emit Enter(msg.sender, _value, mintAmount);
+    /// @notice Deposit `_value` tokens for `_to` and lock for `_lock_duration`
+    /// @param _value Amount to deposit
+    /// @param _to Address to deposit
+    function create_lock_for(uint _value, address _to) external nonreentrant returns (uint) {
+        return _create_lock(_value, _to);
     }
 
     /// @notice Deposit `_value` tokens for `msg.sender` and lock for `_lock_duration`
     /// @param _value Amount to deposit
-    /// @param _lock_duration Number of seconds to lock tokens for (rounded down to nearest week)
-    function create_lock(uint _value, uint _lock_duration) external nonreentrant returns (uint) {
-        return _create_lock(_value, _lock_duration, msg.sender);
-    }
-
-    /// @notice Extend the unlock time for `_tokenId`
-    /// @param _lock_duration New number of seconds until tokens unlock
-    function increase_unlock_time(uint _tokenId, uint _lock_duration) external nonreentrant {
-        assert(_isApprovedOrOwner(msg.sender, _tokenId));
-
-        LockedBalance memory _locked = locked[_tokenId];
-        uint unlock_time = (block.timestamp + _lock_duration) / WEEK * WEEK; // Locktime is rounded down to weeks
-
-        require(_locked.end > block.timestamp, 'Lock expired');
-        require(_locked.amount > 0, 'Nothing is locked');
-        require(unlock_time > _locked.end, 'Can only increase lock duration');
-        require(unlock_time <= block.timestamp + MAXTIME, 'Voting lock can be 6 months max');
-
-        _deposit_for(_tokenId, 0, unlock_time, _locked, DepositType.INCREASE_UNLOCK_TIME);
-    }
-
-    /// @notice Withdraw all tokens for `_tokenId`
-    /// @dev Only possible if the lock has expired
-    function leave(uint _tokenId) external nonreentrant {
-        assert(_isApprovedOrOwner(msg.sender, _tokenId));
-        require(attachments[_tokenId] == 0 && !voted[_tokenId], "attached");
-
-        LockedBalance memory _locked = locked[_tokenId];
-        require(block.timestamp >= _locked.end, "The lock didn't expire");
-        uint value = uint(int256(_locked.amount));
-
-
-        locked[_tokenId] = LockedBalance(0,0);
-        uint supply_before = supply;
-        supply = supply_before - value;
-
-        // old_locked can have either expired <= timestamp or zero end
-        // _locked has only 0 end
-        // Both can have >= 0 amount
-        _checkpoint(_tokenId, _locked, LockedBalance(0,0));
-
-        // Burn the NFT
-        _burn(_tokenId);
-
-        assert(IERC20(token).transfer(msg.sender, value));
-
-        emit Withdraw(msg.sender, _tokenId, value, block.timestamp);
-        emit Leave(msg.sender, value, 1);
-        emit Supply(supply_before, supply_before - value);
+    function create_lock(uint _value) external nonreentrant returns (uint) {
+        return _create_lock(_value, msg.sender);
     }
 
     // The following ERC20/minime-compatible methods are not real balanceOf and supply!
@@ -1670,7 +1201,7 @@ contract ve is IERC721, IERC721Metadata {
         return _supply_at(last_point, t);
     }
 
-    function totalSupply() public view returns (uint) {
+    function totalSupply() external view returns (uint) {
         return totalSupplyAtT(block.timestamp);
     }
 
@@ -1696,12 +1227,6 @@ contract ve is IERC721, IERC721Metadata {
         }
         // Now dt contains info on how far are we beyond point
         return _supply_at(point, point.ts + dt);
-    }
-
-    function locking(uint256 _tokenId) external view returns (int) {
-        LockedBalance memory _locked = locked[_tokenId];
-
-        return _locked.amount;
     }
 
     function _tokenURI(uint _tokenId, uint _balanceOf, uint _locked_end, uint _value) internal pure returns (string memory output) {
