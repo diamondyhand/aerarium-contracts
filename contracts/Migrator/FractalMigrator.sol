@@ -1,39 +1,64 @@
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+/**
+ * @dev Interface of the ERC721 standard as defined in the EIP.
+ */
+interface IERC721 {
+    /**
+     * @dev Returns the number of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the name of the token.
+     */
+    function name() external view returns (string memory);
+
+    /**
+     * @dev Returns the symbol of the token.
+     */
+    function symbol() external view returns (string memory);
+
+    /**
+     * @dev Returns the owner of the token.
+     */
+    function ownerOf(uint256 tokenId) external view returns (address);
+
+    /**
+     * @dev Transfers `tokenId` token from `from` to `to`.
+     *
+     * Requirements:
+     *
+     * - `from` must be the owner of the token.
+     */
+    function transferFrom(address from, address to, uint256 tokenId) external;
+}
 
 contract TokenSwap {
-    address private _owner;
-    IERC721 private _nft;
-    IERC20 private _token;
+    IERC721 public oldToken;
+    IERC721 public newToken;
+    address public owner;
+    address public receiver;
 
-    constructor(IERC721 nftAddress, IERC20 tokenAddress) {
-        _owner = msg.sender;
-        _nft = nftAddress;
-        _token = tokenAddress;
+    constructor(address  _oldTokenAddress, address _newTokenAddress, address _receiver) {
+        oldToken = IERC721(_oldTokenAddress);
+        newToken = IERC721(_newTokenAddress);
+        owner = msg.sender;
+        receiver = _receiver;
     }
 
-    function swap(address recipient, uint256 tokenId, uint256 amount) public {
-        require(msg.sender == _owner, "Only owner can call this function");
-        require(_nft.ownerOf(tokenId) == address(this), "NFT not transferred to contract");
-        require(_token.balanceOf(address(this)) >= amount, "Insufficient balance");
-
-        _nft.safeTransferFrom(address(this), recipient, tokenId);
-        _token.transfer(recipient, amount);
+    function balance(uint256 _tokenId) public view returns(bool) {
+        return oldToken.ownerOf(_tokenId) == msg.sender;
     }
 
-    function withdrawNFT(uint256 tokenId) public {
-        require(msg.sender == _owner, "Only owner can call this function");
-        require(_nft.ownerOf(tokenId) == address(this), "NFT not transferred to contract");
-
-        _nft.safeTransferFrom(address(this), msg.sender, tokenId);
+    function swap(uint256 _tokenId) public {
+        require(oldToken.ownerOf(_tokenId) == msg.sender, "Not the owner of old token");
+        oldToken.transferFrom(msg.sender, receiver, _tokenId);
+        newToken.transferFrom(owner, msg.sender, _tokenId);
     }
 
-    function withdrawToken() public {
-        require(msg.sender == _owner, "Only owner can call this function");
-        require(_token.balanceOf(address(this)) > 0, "Insufficient balance");
-
-        _token.transfer(msg.sender, _token.balanceOf(address(this)));
+    function withdrawNewTokens() public {
+        require(msg.sender == owner, "Only the contract owner can withdraw new tokens.");
+        newToken.transferFrom(address(this), msg.sender, newToken.totalSupply());
     }
 }
