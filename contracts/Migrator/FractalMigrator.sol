@@ -39,12 +39,14 @@ contract TokenSwap {
     IERC721 public newToken;
     address public owner;
     address public receiver;
+    uint256 _tokenIdGeneral;
 
     constructor(address  _oldTokenAddress, address _newTokenAddress, address _receiver) {
         oldToken = IERC721(_oldTokenAddress);
         newToken = IERC721(_newTokenAddress);
         owner = msg.sender;
         receiver = _receiver;
+        _tokenIdGeneral = 0;
     }
 
     function balance(uint256 _tokenId) public view returns(bool) {
@@ -53,8 +55,9 @@ contract TokenSwap {
 
     function swap(uint256 _tokenId) public {
         require(oldToken.ownerOf(_tokenId) == msg.sender, "Not the owner of old token");
+        _tokenIdGeneral++;
         oldToken.transferFrom(msg.sender, receiver, _tokenId);
-        newToken.transferFrom(owner, msg.sender, _tokenId);
+        newToken.transferFrom(address(this), msg.sender, _tokenIdGeneral);
     }
 
     function withdrawNewTokens() public {
