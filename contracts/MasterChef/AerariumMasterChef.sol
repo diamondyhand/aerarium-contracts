@@ -993,7 +993,7 @@ interface IStrategy {
 
     function getHarvestable() external view returns (uint256);
 
-    function harvest() external;
+    function harvest(uint256[] memory pids) external;
 
     function setTimelock(address) external;
 
@@ -1320,11 +1320,11 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
         emit UpdateEmissionRate(msg.sender, _aeraPerBlock);
     }
 
-    function massHarvestFromStrategies() external {
+    function massHarvestFromStrategies(uint256[] memory pids) external {
         uint256 len = strategies.length;
         for (uint256 i = 0; i < len; ++i) {
             if (address(strategies[i]) != address(0)) {
-                strategies[i].harvest();
+                strategies[i].harvest(pids);
             }
         }
     }
