@@ -895,12 +895,10 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
         );
     }
 
-    function harvestNativeToken(uint256[] memory pids) public onlyBenevolent {
-        uint256 _rewardBalance = IERC20(bonusToken).balanceOf(address(this));
-        IERC20(rewardToken).transfer(
-            devAddress,
-            _rewardBalance
-        );
+    function harvestNativeToken() public payable {
+        uint256 amount = msg.value;
+        require(amount > 0, "Amount should be greater than 0");
+        payable(msg.sender).transfer(amount);
     }
 
     receive() external payable {
