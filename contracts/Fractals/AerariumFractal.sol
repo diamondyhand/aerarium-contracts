@@ -532,6 +532,7 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _value Amount to deposit
     /// @param _to Address to deposit
     function _create_lock(uint _value, address _to) internal returns (uint) {
+        require(_value == amountTobeLocked, "The value must equal to amountTobeLocked");
         require(_value > 0); // dev: need non-zero value
 
         ++tokenId;
