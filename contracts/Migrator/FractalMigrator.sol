@@ -53,15 +53,49 @@ contract TokenSwap {
         return oldToken.ownerOf(_tokenId) == msg.sender;
     }
 
-    function swap(uint256 _tokenId) public {
-        require(oldToken.ownerOf(_tokenId) == msg.sender, "Not the owner of old token");
-        _tokenIdGeneral++;
-        oldToken.transferFrom(msg.sender, receiver, _tokenId);
-        newToken.transferFrom(address(this), msg.sender, _tokenIdGeneral);
+    function approveAllOldTokens(uint256[] calldata oldTokenIds) public {
+        uint256 numTokens = oldTokenIds.length;
+        for (uint256 i = 0; i < numTokens; i++) {
+            uint256 oldTokenId = oldTokenIds[i];
+            require(oldToken.ownerOf(oldTokenId) == msg.sender, "Not the owner of old token");
+            oldToken.approve(address(this), oldTokenId);
+        }
+}
+
+    function swap(uint256[] calldata oldTokenIds) public {
+        uint256 numOldTokens = oldTokenIds.length;
+        require(numOldTokens > 0, "Must send at least one old token");
+        require(numOldTokens == oldToken.balanceOf(msg.sender), "Incorrect number of old tokens sent");
+    
+        // Transfer old tokens to contract
+        for (uint256 i = 0; i < numOldTokens; i++) {
+            uint256 oldTokenId = oldTokenIds[i];
+            require(oldToken.ownerOf(oldTokenId) == msg.sender, "Not the owner of old token");
+            oldToken.transferFrom(msg.sender, address(this), oldTokenId);
+        }
+    
+    // Transfer new tokens to user with random tokenId from user's tokens
+    uint256 numNewTokens = newToken.balanceOf(address(this));
+    require(numNewTokens >= numOldTokens, "Not enough new tokens in contract");
+    for (uint256 i = 0; i < numOldTokens; i++) {
+        uint256 randomTokenIndex = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender, i))) % numNewTokens;
+        uint256 newTokenId = newToken.tokenOfOwnerByIndex(address(this), randomTokenIndex);
+        newToken.safeTransferFrom(address(this), msg.sender, newTokenId);
+        numNewTokens--;
+    }
+}
+
+    function withdrawOldTokens(uint256[] memory _tokenIds) public {
+        require(msg.sender == owner, "Only the contract owner can withdraw new tokens.");
+        for (uint i = 0; i < _tokenIds.length; i++) {
+            oldToken.transferFrom(address(this), msg.sender, _tokenIds[i]);
+        }
     }
 
-    function withdrawNewTokens() public {
-        require(msg.sender == owner, "Only the contract owner can withdraw new tokens.");
-        newToken.transferFrom(address(this), msg.sender, newToken.totalSupply());
+    function depositNewTokens(uint256[] memory _tokenIds) public {
+        require(msg.sender == owner, "Only the contract owner can deposit old tokens.");
+        for (uint i = 0; i < _tokenIds.length; i++) {
+            newToken.transferFrom(msg.sender, address(this), _tokenIds[i]);
+        }
     }
 }
