@@ -1,337 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.11;
 
-/**
-@title Voting Escrow
-@author Curve Finance
-@license MIT
-@notice Votes have a weight depending on time, so that users are
-committed to the future of (whatever they are voting for)
-@dev Vote weight decays linearly over time. Lock time cannot be
-more than `MAXTIME` (4 years).
+pragma solidity ^0.8.7;
 
-# Voting escrow to have time-weighted votes
-# Votes have a weight depending on time, so that users are committed
-# to the future of (whatever they are voting for).
-# The weight in this implementation is linear, and lock cannot be more than maxtime:
-# w ^
-# 1 +        /
-#   |      /
-#   |    /
-#   |  /
-#   |/
-# 0 +--------+------> time
-#       maxtime (4 years?)
-*/
-
-/// [MIT License]
-/// @title Base64
-/// @notice Provides a function for encoding some bytes in base64
-/// @author Brecht Devos <brecht@loopring.org>
-library Base64 {
-    bytes internal constant TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-    /// @notice Encodes some bytes to the base64 representation
-    function encode(bytes memory data) internal pure returns (string memory) {
-        uint len = data.length;
-        if (len == 0) return "";
-
-        // multiply by 4/3 rounded up
-        uint encodedLen = 4 * ((len + 2) / 3);
-
-        // Add some extra buffer at the end
-        bytes memory result = new bytes(encodedLen + 32);
-
-        bytes memory table = TABLE;
-
-        assembly {
-            let tablePtr := add(table, 1)
-            let resultPtr := add(result, 32)
-
-            for {
-                let i := 0
-            } lt(i, len) {
-
-            } {
-                i := add(i, 3)
-                let input := and(mload(add(data, i)), 0xffffff)
-
-                let out := mload(add(tablePtr, and(shr(18, input), 0x3F)))
-                out := shl(8, out)
-                out := add(out, and(mload(add(tablePtr, and(shr(12, input), 0x3F))), 0xFF))
-                out := shl(8, out)
-                out := add(out, and(mload(add(tablePtr, and(shr(6, input), 0x3F))), 0xFF))
-                out := shl(8, out)
-                out := add(out, and(mload(add(tablePtr, and(input, 0x3F))), 0xFF))
-                out := shl(224, out)
-
-                mstore(resultPtr, out)
-
-                resultPtr := add(resultPtr, 4)
-            }
-
-            switch mod(len, 3)
-            case 1 {
-                mstore(sub(resultPtr, 2), shl(240, 0x3d3d))
-            }
-            case 2 {
-                mstore(sub(resultPtr, 1), shl(248, 0x3d))
-            }
-
-            mstore(result, encodedLen)
-        }
-
-        return string(result);
-    }
-}
-
-/**
-* @dev Interface of the ERC165 standard, as defined in the
-* https://eips.ethereum.org/EIPS/eip-165[EIP].
-*
-* Implementers can declare support of contract interfaces, which can then be
-* queried by others ({ERC165Checker}).
-*
-* For an implementation, see {ERC165}.
-*/
-interface IERC165 {
-    /**
-    * @dev Returns true if this contract implements the interface defined by
-    * `interfaceId`. See the corresponding
-    * https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[EIP section]
-    * to learn more about how these ids are created.
-    *
-    * This function call must use less than 30 000 gas.
-    */
-    function supportsInterface(bytes4 interfaceId) external view returns (bool);
-}
-
-/**
-* @dev Required interface of an ERC721 compliant contract.
-*/
-interface IERC721 is IERC165 {
-    /**
-    * @dev Emitted when `tokenId` token is transferred from `from` to `to`.
-    */
-    event Transfer(address indexed from, address indexed to, uint indexed tokenId);
-
-    /**
-    * @dev Emitted when `owner` enables `approved` to manage the `tokenId` token.
-    */
-    event Approval(address indexed owner, address indexed approved, uint indexed tokenId);
-
-    /**
-    * @dev Emitted when `owner` enables or disables (`approved`) `operator` to manage all of its assets.
-    */
-    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
-
-    /**
-    * @dev Returns the number of tokens in ``owner``'s account.
-    */
-    function balanceOf(address owner) external view returns (uint balance);
-
-    /**
-    * @dev Returns the owner of the `tokenId` token.
-    *
-    * Requirements:
-    *
-    * - `tokenId` must exist.
-    */
-    function ownerOf(uint tokenId) external view returns (address owner);
-
-    /**
-    * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients
-    * are aware of the ERC721 protocol to prevent tokens from being forever locked.
-    *
-    * Requirements:
-    *
-    * - `from` cannot be the zero address.
-    * - `to` cannot be the zero address.
-    * - `tokenId` token must exist and be owned by `from`.
-    * - If the caller is not `from`, it must be have been allowed to move this token by either {approve} or {setApprovalForAll}.
-    * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
-    *
-    * Emits a {Transfer} event.
-    */
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint tokenId
-    ) external;
-
-    /**
-    * @dev Transfers `tokenId` token from `from` to `to`.
-    *
-    * WARNING: Usage of this method is discouraged, use {safeTransferFrom} whenever possible.
-    *
-    * Requirements:
-    *
-    * - `from` cannot be the zero address.
-    * - `to` cannot be the zero address.
-    * - `tokenId` token must be owned by `from`.
-    * - If the caller is not `from`, it must be approved to move this token by either {approve} or {setApprovalForAll}.
-    *
-    * Emits a {Transfer} event.
-    */
-    function transferFrom(
-        address from,
-        address to,
-        uint tokenId
-    ) external;
-
-    /**
-    * @dev Gives permission to `to` to transfer `tokenId` token to another account.
-    * The approval is cleared when the token is transferred.
-    *
-    * Only a single account can be approved at a time, so approving the zero address clears previous approvals.
-    *
-    * Requirements:
-    *
-    * - The caller must own the token or be an approved operator.
-    * - `tokenId` must exist.
-    *
-    * Emits an {Approval} event.
-    */
-    function approve(address to, uint tokenId) external;
-
-    /**
-    * @dev Returns the account approved for `tokenId` token.
-    *
-    * Requirements:
-    *
-    * - `tokenId` must exist.
-    */
-    function getApproved(uint tokenId) external view returns (address operator);
-
-    /**
-    * @dev Approve or remove `operator` as an operator for the caller.
-    * Operators can call {transferFrom} or {safeTransferFrom} for any token owned by the caller.
-    *
-    * Requirements:
-    *
-    * - The `operator` cannot be the caller.
-    *
-    * Emits an {ApprovalForAll} event.
-    */
-    function setApprovalForAll(address operator, bool _approved) external;
-
-    /**
-    * @dev Returns if the `operator` is allowed to manage all of the assets of `owner`.
-    *
-    * See {setApprovalForAll}
-    */
-    function isApprovedForAll(address owner, address operator) external view returns (bool);
-
-    /**
-    * @dev Safely transfers `tokenId` token from `from` to `to`.
-    *
-    * Requirements:
-    *
-    * - `from` cannot be the zero address.
-    * - `to` cannot be the zero address.
-    * - `tokenId` token must exist and be owned by `from`.
-    * - If the caller is not `from`, it must be approved to move this token by either {approve} or {setApprovalForAll}.
-    * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
-    *
-    * Emits a {Transfer} event.
-    */
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint tokenId,
-        bytes calldata data
-    ) external;
-}
-
-/**
-* @title ERC721 token receiver interface
-* @dev Interface for any contract that wants to support safeTransfers
-* from ERC721 asset contracts.
-*/
-interface IERC721Receiver {
-    /**
-    * @dev Whenever an {IERC721} `tokenId` token is transferred to this contract via {IERC721-safeTransferFrom}
-    * by `operator` from `from`, this function is called.
-    *
-    * It must return its Solidity selector to confirm the token transfer.
-    * If any other value is returned or the interface is not implemented by the recipient, the transfer will be reverted.
-    *
-    * The selector can be obtained in Solidity with `IERC721.onERC721Received.selector`.
-    */
-    function onERC721Received(
-        address operator,
-        address from,
-        uint tokenId,
-        bytes calldata data
-    ) external returns (bytes4);
-}
-
-/**
-* @title ERC-721 Non-Fungible Token Standard, optional metadata extension
-* @dev See https://eips.ethereum.org/EIPS/eip-721
-*/
-interface IERC721Metadata is IERC721 {
-    /**
-    * @dev Returns the token collection name.
-    */
-    function name() external view returns (string memory);
-
-    /**
-    * @dev Returns the token collection symbol.
-    */
-    function symbol() external view returns (string memory);
-
-    /**
-    * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
-    */
-    function tokenURI(uint tokenId) external view returns (string memory);
-}
-
-/**
-* @dev Interface of the ERC20 standard as defined in the EIP.
-*/
-interface IERC20 {
-    /**
-    * @dev Moves `amount` tokens from the caller's account to `recipient`.
-    *
-    * Returns a boolean value indicating whether the operation succeeded.
-    *
-    * Emits a {Transfer} event.
-    */
-    function transfer(address recipient, uint amount) external returns (bool);
-
-    /**
-    * @dev Moves `amount` tokens from `sender` to `recipient` using the
-    * allowance mechanism. `amount` is then deducted from the caller's
-    * allowance.
-    *
-    * Returns a boolean value indicating whether the operation succeeded.
-    *
-    * Emits a {Transfer} event.
-    */
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint amount
-    ) external returns (bool);
-}
-
-struct Point {
-    int128 bias;
-    int128 slope; // # -dweight / dt
-    uint ts;
-    uint blk; // block
-}
-/* We cannot really do block numbers per se b/c slope is per time, not per block
-* and per block could be fairly bad b/c Ethereum changes blocktimes.
-* What we can do is to extrapolate ***At functions */
-
-struct LockedBalance {
-    int128 amount;
-    uint end;
-}
-
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Base64.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 contract ve is IERC721, IERC721Metadata, Ownable {
     enum DepositType {
@@ -350,6 +29,19 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         DepositType deposit_type,
         uint ts
     );
+
+    struct Point {
+        int128 bias;
+        int128 slope; // # -dweight / dt
+        uint256 ts;
+        uint256 blk; // block
+    }
+
+    struct LockedBalance {
+        int128 amount;
+        uint256 end;
+    }
+
     event Withdraw(address indexed provider, uint tokenId, uint value, uint ts);
     event Supply(uint prevSupply, uint supply);
 
@@ -832,38 +524,8 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         attachments[_tokenId] = attachments[_tokenId]-1;
     }
 
-    function merge(uint _from, uint _to) external {
-        require(attachments[_from] == 0 && !voted[_from], "attached");
-        require(_from != _to);
-        require(_isApprovedOrOwner(msg.sender, _from));
-        require(_isApprovedOrOwner(msg.sender, _to));
-
-        LockedBalance memory _locked0 = locked[_from];
-        LockedBalance memory _locked1 = locked[_to];
-        uint value0 = uint(int256(_locked0.amount));
-        uint end = _locked0.end >= _locked1.end ? _locked0.end : _locked1.end;
-
-        locked[_from] = LockedBalance(0, 0);
-        _burn(_from);
-        _deposit_for(_to, value0, _locked1, DepositType.MERGE_TYPE);
-    }
-
     function block_number() external view returns (uint) {
         return block.number;
-    }
-
-    /// @notice Deposit `_value` tokens for `_tokenId` and add to the lock
-    /// @dev Anyone (even a smart contract) can deposit for someone else, but
-    ///      cannot extend their locktime and deposit for a brand new user
-    /// @param _tokenId lock NFT
-    /// @param _value Amount to add to user's lock
-    function deposit_for(uint _tokenId, uint _value) external nonreentrant {
-        LockedBalance memory _locked = locked[_tokenId];
-
-        require(_value > 0); // dev: need non-zero value
-        require(_locked.amount > 0, 'No existing lock found');
-        require(_locked.end > block.timestamp, 'Cannot add to expired lock. Withdraw');
-        _deposit_for(_tokenId, _value, _locked, DepositType.DEPOSIT_FOR_TYPE);
     }
 
     /// @notice Deposit `_value` tokens for `_to` and lock for `_lock_duration`
