@@ -848,7 +848,6 @@ contract AeraLocker is ReentrancyGuard, Ownable, IAeraLocker {
     mapping(address => bool) public blacklist;
     //     Tokens
     IERC20 public immutable stakingToken;
-    address public immutable cvxCrv;
     //     Denom for calcs
     uint256 public constant denominator = 10000;
 
@@ -887,20 +886,17 @@ contract AeraLocker is ReentrancyGuard, Ownable, IAeraLocker {
      * @param _nameArg          Token name, simples
      * @param _symbolArg        Token symbol
      * @param _stakingToken     CVX (0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B)
-     * @param _cvxCrv           cvxCRV (0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7)
      */
     constructor(
         string memory _nameArg,
         string memory _symbolArg,
-        address _stakingToken,
-        address _cvxCrv
+        address _stakingToken
         ) Ownable() {
         _name = _nameArg;
         _symbol = _symbolArg;
         _decimals = 18;
 
         stakingToken = IERC20(_stakingToken);
-        cvxCrv = _cvxCrv;
 
         uint256 currentEpoch = block.timestamp.div(rewardsDuration).mul(rewardsDuration);
         epochs.push(Epoch({ supply: 0, date: uint32(currentEpoch) }));
@@ -957,25 +953,13 @@ contract AeraLocker is ReentrancyGuard, Ownable, IAeraLocker {
     }
 
     // Add a new reward token to be distributed to stakers
-    function addReward(address _rewardsToken, address _distributor) external onlyOwner {
+    function addReward(address _rewardsToken) external onlyOwner {
         require(rewardData[_rewardsToken].lastUpdateTime == 0, "Reward already exists");
-        require(_rewardsToken != address(stakingToken), "Cannot add StakingToken as reward");
         require(rewardTokens.length < 5, "Max rewards length");
 
         rewardTokens.push(_rewardsToken);
         rewardData[_rewardsToken].lastUpdateTime = uint32(block.timestamp);
         rewardData[_rewardsToken].periodFinish = uint32(block.timestamp);
-        rewardDistributors[_rewardsToken][_distributor] = true;
-    }
-
-    // Modify approval for an address to call notifyRewardAmount
-    function approveRewardDistributor(
-        address _rewardsToken,
-        address _distributor,
-        bool _approved
-    ) external onlyOwner {
-        require(rewardData[_rewardsToken].lastUpdateTime > 0, "Reward does not exist");
-        rewardDistributors[_rewardsToken][_distributor] = _approved;
     }
 
     //set kick incentive
