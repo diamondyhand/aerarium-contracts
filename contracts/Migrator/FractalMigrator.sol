@@ -1,3 +1,23 @@
+interface IERC721Enumerable is IERC721 {
+
+    /**
+     * @dev Returns the total amount of tokens stored by the contract.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns a token ID owned by `owner` at a given `index` of its token list.
+     * Use along with {balanceOf} to enumerate all of ``owner``'s tokens.
+     */
+    function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256 tokenId);
+
+    /**
+     * @dev Returns a token ID at a given `index` of all the tokens stored by the contract.
+     * Use along with {totalSupply} to enumerate all tokens.
+     */
+    function tokenByIndex(uint256 index) external view returns (uint256);
+}
+
 pragma solidity ^0.8.0;
 
 /**
@@ -53,37 +73,34 @@ contract TokenSwap {
         return oldToken.ownerOf(_tokenId) == msg.sender;
     }
 
-    function approveAllOldTokens(uint256[] calldata oldTokenIds) public {
-        uint256 numTokens = oldTokenIds.length;
+    function approveAllOldTokens(uint256 numTokens) public {
         for (uint256 i = 0; i < numTokens; i++) {
-            uint256 oldTokenId = oldTokenIds[i];
-            require(oldToken.ownerOf(oldTokenId) == msg.sender, "Not the owner of old token");
+            uint256 oldTokenId = tokenOfOwnerByIndex(address(msg.sender),i);
             oldToken.approve(address(this), oldTokenId);
+            }
         }
-}
 
-    function swap(uint256[] calldata oldTokenIds) public {
-        uint256 numOldTokens = oldTokenIds.length;
+    function swap(uint256 numOldTokens) public {
         require(numOldTokens > 0, "Must send at least one old token");
         require(numOldTokens == oldToken.balanceOf(msg.sender), "Incorrect number of old tokens sent");
     
         // Transfer old tokens to contract
         for (uint256 i = 0; i < numOldTokens; i++) {
-            uint256 oldTokenId = oldTokenIds[i];
+            uint256 oldTokenId = tokenOfOwnerByIndex(address(msg.sender),i);
             require(oldToken.ownerOf(oldTokenId) == msg.sender, "Not the owner of old token");
             oldToken.transferFrom(msg.sender, address(this), oldTokenId);
         }
     
     // Transfer new tokens to user with random tokenId from user's tokens
-    uint256 numNewTokens = newToken.balanceOf(address(this));
-    require(numNewTokens >= numOldTokens, "Not enough new tokens in contract");
-    for (uint256 i = 0; i < numOldTokens; i++) {
-        uint256 randomTokenIndex = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender, i))) % numNewTokens;
-        uint256 newTokenId = newToken.tokenOfOwnerByIndex(address(this), randomTokenIndex);
-        newToken.safeTransferFrom(address(this), msg.sender, newTokenId);
-        numNewTokens--;
+        uint256 numNewTokens = newToken.balanceOf(address(this));
+        require(numNewTokens >= numOldTokens, "Not enough new tokens in contract");
+        for (uint256 i = 0; i < numOldTokens; i++) {
+            uint256 randomTokenIndex = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender, i))) % numNewTokens;
+            uint256 newTokenId = newToken.tokenOfOwnerByIndex(address(this), randomTokenIndex);
+            newToken.safeTransferFrom(address(this), msg.sender, newTokenId);
+            numNewTokens--;
+        }
     }
-}
 
     function withdrawOldTokens(uint256[] memory _tokenIds) public {
         require(msg.sender == owner, "Only the contract owner can withdraw new tokens.");
