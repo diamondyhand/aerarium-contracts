@@ -1573,7 +1573,6 @@ contract AeraLocker is ReentrancyGuard, Ownable, IAeraLocker {
     ****************************************/
 
     function queueNewRewards(address _rewardsToken, uint256 _rewards) external nonReentrant {
-        require(rewardDistributors[_rewardsToken][msg.sender], "!authorized");
         require(_rewards > 0, "No reward");
 
         RewardData storage rdata = rewardData[_rewardsToken];
