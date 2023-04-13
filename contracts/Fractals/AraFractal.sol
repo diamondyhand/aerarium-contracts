@@ -65,8 +65,8 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     mapping(uint => bool) public voted;
     address public voter;
 
-    string constant public name = "aeraFractalV2";
-    string constant public symbol = "aeF";
+    string constant public name = "araFractalV2";
+    string constant public symbol = "araFractal";
     string constant public version = "1.0.0";
     uint8 constant public decimals = 18;
 
@@ -105,6 +105,8 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @dev ERC165 interface ID of ERC721Metadata
     bytes4 internal constant ERC721_METADATA_INTERFACE_ID = 0x5b5e139f;
 
+    bool public canCreateFractals;
+
     /// @dev reentrancy guard
     uint8 internal constant _not_entered = 1;
     uint8 internal constant _entered = 2;
@@ -120,7 +122,8 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param token_addr `ERC20CRV` token address
     constructor(
         address token_addr,
-        uint256 _amountTobeLocked
+        uint256 _amountTobeLocked,
+        bool _canCreateFractals
     ) {
         token = token_addr;
         voter = msg.sender;
@@ -133,6 +136,7 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
         amountTobeLocked = _amountTobeLocked;
 
+        canCreateFractals = _canCreateFractals;
         // mint-ish
         emit Transfer(address(0), address(this), tokenId);
         // burn-ish
@@ -147,6 +151,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
     function updateAmountTobeLocked(uint256 _amountTobeLocked) public onlyOwner {
         amountTobeLocked = _amountTobeLocked;
+    }
+
+    function updateCanCreateFractal(bool _canCreateFractals) public onlyOwner {
+        canCreateFractals = _canCreateFractals;
     }
 
     /// @notice Get the most recently recorded rate of voting power decrease for `_tokenId`
@@ -533,8 +541,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _to Address to deposit
     function _create_lock(uint _value, address _to) internal returns (uint) {
         require(_value == amountTobeLocked, "The value must equal to amountTobeLocked");
+        require(canCreateFractals == true, "canCreateFractals must be true");
         require(_value > 0); // dev: need non-zero value
-
+        
         ++tokenId;
         uint _tokenId = tokenId;
         _mint(_to, _tokenId);
