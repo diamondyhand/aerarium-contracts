@@ -114,8 +114,12 @@ contract TokenSwap {
     }
 
     function withdrawNewTokens(uint256 _amount) public {
-    require(msg.sender == owner, "Only the contract owner can withdraw new tokens.");
-    require(newToken.transfer(msg.sender, _amount), "Failed to transfer new tokens.");
+        require(msg.sender == owner, "Only the contract owner can withdraw new tokens.");
+        require(newToken.transfer(msg.sender, _amount), "Failed to transfer new tokens.");
+    }
 
-}
+    function withdrawOldTokens(uint256 _amount) public {
+        require(msg.sender == owner, "Only the contract owner can withdraw new tokens.");
+        require(oldToken.transfer(msg.sender, _amount), "Failed to transfer new tokens.");
+    }
 }
