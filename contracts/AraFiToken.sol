@@ -939,14 +939,14 @@ contract Operator is Context, Ownable {
     }
 }
 
-contract Aerarium is ERC20Burnable, Operator {
+contract AraFiToken is ERC20Burnable, Operator {
     using SafeMath8 for uint8;
     using SafeMath for uint256;
 
     /**
-     * @notice Constructs the AERA ERC-20 contract.
+     * @notice Constructs the ARA ERC-20 contract.
      */
-    constructor() public ERC20("AERA", "AERA") {
+    constructor() public ERC20("AraFi Token", "ARA") {
         _mint(msg.sender, 1000000 ether);
     }
 }
