@@ -1039,7 +1039,7 @@ contract IMasterChef {
 pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
-contract MasterHummusV2 is Ownable, ReentrancyGuard {
+contract AraMasterChef is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeBEP20 for IBEP20;
     using BoringERC20 for IERC20;
@@ -1050,13 +1050,13 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
         uint256 amount;         // How many LP tokens the user has provided.
         uint256 rewardDebt;     // Reward debt. See explanation below.
         //
-        // We do some fancy math here. Basically, any point in time, the amount of AERAs
+        // We do some fancy math here. Basically, any point in time, the amount of ARAs
         // entitled to a user but is pending to be distributed is:
         //
-        //   pending reward = (user.amount * pool.accAeraPerShare) - user.rewardDebt
+        //   pending reward = (user.amount * pool.accAraPerShare) - user.rewardDebt
         //
         // Whenever a user deposits or withdraws LP tokens to a pool. Here's what happens:
-        //   1. The pool's `accAeraPerShare` (and `lastRewardBlock`) gets updated.
+        //   1. The pool's `accAraPerShare` (and `lastRewardBlock`) gets updated.
         //   2. User receives the pending reward sent to his/her address.
         //   3. User's `amount` gets updated.
         //   4. User's `rewardDebt` gets updated.
@@ -1065,19 +1065,19 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
     // Info of each pool.
     struct PoolInfo {
         IBEP20 lpToken;           // Address of LP token contract.
-        uint256 allocPoint;       // How many allocation points assigned to this pool. AERAs to distribute per block.
-        uint256 lastRewardBlock;  // Last block number that AERAs distribution occurs.
-        uint256 accAeraPerShare;   // Accumulated AERAs per share, times 1e12. See below.
+        uint256 allocPoint;       // How many allocation points assigned to this pool. ARAs to distribute per block.
+        uint256 lastRewardBlock;  // Last block number that ARAs distribution occurs.
+        uint256 accAraPerShare;   // Accumulated ARAs per share, times 1e12. See below.
         uint16 depositFeeBP;      // Deposit fee in basis points
     }
 
-    // The aera TOKEN!
-    IERC20 public aera;
+    // The ara TOKEN!
+    IERC20 public ara;
     // Dev address.
     address public devaddr;
-    // aera tokens created per block.
-    uint256 public aeraPerBlock;
-    // Bonus muliplier for early aera makers.
+    // ara tokens created per block.
+    uint256 public araPerBlock;
+    // Bonus muliplier for early ara makers.
     uint256 public constant BONUS_MULTIPLIER = 1;
     // Deposit Fee address
     address public feeAddress;
@@ -1098,18 +1098,18 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event SetFeeAddress(address indexed user, address indexed newAddress);
     event SetDevAddress(address indexed user, address indexed newAddress);
-    event UpdateEmissionRate(address indexed user, uint256 aeraPerBlock);
+    event UpdateEmissionRate(address indexed user, uint256 araPerBlock);
 
     constructor(
-        IERC20 _aera,
+        IERC20 _ara,
         address _devaddr,
         address _feeAddress,
-        uint256 _aeraPerBlock
+        uint256 _araPerBlock
         ) public {
-        aera = _aera;
+        ara = _ara;
         devaddr = _devaddr;
         feeAddress = _feeAddress;
-        aeraPerBlock = _aeraPerBlock;
+        araPerBlock = _araPerBlock;
     }
 
     function poolLength() external view returns (uint256) {
@@ -1130,12 +1130,12 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
         lpToken : IBEP20(_lpToken),
         allocPoint : _allocPoint,
         lastRewardBlock : lastRewardBlock,
-        accAeraPerShare : 0,
+        accAraPerShare : 0,
         depositFeeBP : _depositFeeBP
         }));
     }
 
-    // Update the given pool's aera allocation point and deposit fee. Can only be called by the owner.
+    // Update the given pool's ara allocation point and deposit fee. Can only be called by the owner.
     function set(uint256 _pid, uint256 _allocPoint, uint16 _depositFeeBP,  IStrategy _strategy, bool _withUpdate) public onlyOwner {
         require(_depositFeeBP <= 10000, "set: invalid deposit fee basis points");
         if (_withUpdate) {
@@ -1160,11 +1160,11 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
         return _to.sub(_from).mul(BONUS_MULTIPLIER);
     }
 
-    // View function to see pending AERAs on frontend.
-    function pendingAera(uint256 _pid, address _user) external view returns (uint256) {
+    // View function to see pending ARAs on frontend.
+    function pendingAra(uint256 _pid, address _user) external view returns (uint256) {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
-        uint256 accAeraPerShare = pool.accAeraPerShare;
+        uint256 accAraPerShare = pool.accAraPerShare;
         uint256 lpSupply;
         if (address(strategies[_pid]) != address(0)) {
             lpSupply = pool.lpToken.balanceOf(address(this)).add(strategies[_pid].balanceOf());
@@ -1174,10 +1174,10 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
         }
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-            uint256 aeraReward = multiplier.mul(aeraPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-            accAeraPerShare = accAeraPerShare.add(aeraReward.mul(1e12).div(lpSupply));
+            uint256 araReward = multiplier.mul(araPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
+            accAraPerShare = accAraPerShare.add(araReward.mul(1e12).div(lpSupply));
         }
-        return user.amount.mul(accAeraPerShare).div(1e12).sub(user.rewardDebt);
+        return user.amount.mul(accAraPerShare).div(1e12).sub(user.rewardDebt);
     }
 
     // Update reward variables for all pools. Be careful of gas spending!
@@ -1206,22 +1206,22 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
             return;
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-        uint256 aeraReward = multiplier.mul(aeraPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-        aera.transfer(devaddr, aeraReward.div(12));
-        aera.transfer(address(this), aeraReward);
-        pool.accAeraPerShare = pool.accAeraPerShare.add(aeraReward.mul(1e12).div(lpSupply));
+        uint256 araReward = multiplier.mul(araPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
+        ara.transfer(devaddr, araReward.div(12));
+        ara.transfer(address(this), araReward);
+        pool.accAraPerShare = pool.accAraPerShare.add(araReward.mul(1e12).div(lpSupply));
         pool.lastRewardBlock = block.number;
     }
 
-    // Deposit LP tokens to MasterChef for aera allocation.
+    // Deposit LP tokens to MasterChef for ara allocation.
     function deposit(uint256 _pid, uint256 _amount) public nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         if (user.amount > 0) {
-            uint256 pending = user.amount.mul(pool.accAeraPerShare).div(1e12).sub(user.rewardDebt);
+            uint256 pending = user.amount.mul(pool.accAraPerShare).div(1e12).sub(user.rewardDebt);
             if (pending > 0) {
-                safeAeraTransfer(msg.sender, pending);
+                safeAraTransfer(msg.sender, pending);
             }
         }
         if (_amount > 0) {
@@ -1240,7 +1240,7 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
                 _strategy.deposit();
             }
         }
-        user.rewardDebt = user.amount.mul(pool.accAeraPerShare).div(1e12);
+        user.rewardDebt = user.amount.mul(pool.accAraPerShare).div(1e12);
         emit Deposit(msg.sender, _pid, _amount);
     }
     
@@ -1253,9 +1253,9 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
         uint256 balance = pool.lpToken.balanceOf(address(this));
         IStrategy strategy = strategies[_pid];
         updatePool(_pid);
-        uint256 pending = user.amount.mul(pool.accAeraPerShare).div(1e12).sub(user.rewardDebt);
+        uint256 pending = user.amount.mul(pool.accAraPerShare).div(1e12).sub(user.rewardDebt);
         if (pending > 0) {
-            safeAeraTransfer(msg.sender, pending);
+            safeAraTransfer(msg.sender, pending);
         }
         if (_amount > 0) {
             user.amount = user.amount.sub(_amount);
@@ -1266,7 +1266,7 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
             }   
             pool.lpToken.safeTransfer(address(msg.sender), _amount);
         }
-        user.rewardDebt = user.amount.mul(pool.accAeraPerShare).div(1e12);
+        user.rewardDebt = user.amount.mul(pool.accAraPerShare).div(1e12);
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
@@ -1288,16 +1288,16 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
         emit EmergencyWithdraw(msg.sender, _pid, amount);
     }
 
-    // Safe aera transfer function, just in case if rounding error causes pool to not have enough AERAs.
-    function safeAeraTransfer(address _to, uint256 _amount) internal {
-        uint256 aeraBal = aera.balanceOf(address(this));
+    // Safe ara transfer function, just in case if rounding error causes pool to not have enough ARAs.
+    function safeAraTransfer(address _to, uint256 _amount) internal {
+        uint256 araBal = ara.balanceOf(address(this));
         bool transferSuccess = false;
-        if (_amount > aeraBal) {
-            transferSuccess = aera.transfer(_to, aeraBal);
+        if (_amount > araBal) {
+            transferSuccess = ara.transfer(_to, araBal);
         } else {
-            transferSuccess = aera.transfer(_to, _amount);
+            transferSuccess = ara.transfer(_to, _amount);
         }
-        require(transferSuccess, "safeAeraTransfer: transfer failed");
+        require(transferSuccess, "safeAraTransfer: transfer failed");
     }
 
     // Update dev address by the previous dev.
@@ -1314,10 +1314,10 @@ contract MasterHummusV2 is Ownable, ReentrancyGuard {
     }
 
     //Pancake has to add hidden dummy pools inorder to alter the emission, here we make it simple and transparent to all.
-    function updateEmissionRate(uint256 _aeraPerBlock) public onlyOwner {
+    function updateEmissionRate(uint256 _araPerBlock) public onlyOwner {
         massUpdatePools();
-        aeraPerBlock = _aeraPerBlock;
-        emit UpdateEmissionRate(msg.sender, _aeraPerBlock);
+        araPerBlock = _araPerBlock;
+        emit UpdateEmissionRate(msg.sender, _araPerBlock);
     }
 
     function massHarvestFromStrategies(uint256[] memory pids) external {
