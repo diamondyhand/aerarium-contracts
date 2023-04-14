@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -65,8 +63,8 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     mapping(uint => bool) public voted;
     address public voter;
 
-    string constant public name = "aeraFractalV2";
-    string constant public symbol = "aeF";
+    string constant public name = "araFractalV2";
+    string constant public symbol = "araFractal";
     string constant public version = "1.0.0";
     uint8 constant public decimals = 18;
 
@@ -105,6 +103,8 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @dev ERC165 interface ID of ERC721Metadata
     bytes4 internal constant ERC721_METADATA_INTERFACE_ID = 0x5b5e139f;
 
+    bool public canCreateFractals;
+
     /// @dev reentrancy guard
     uint8 internal constant _not_entered = 1;
     uint8 internal constant _entered = 2;
@@ -120,7 +120,8 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param token_addr `ERC20CRV` token address
     constructor(
         address token_addr,
-        uint256 _amountTobeLocked
+        uint256 _amountTobeLocked,
+        bool _canCreateFractals
     ) {
         token = token_addr;
         voter = msg.sender;
@@ -133,6 +134,7 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
         amountTobeLocked = _amountTobeLocked;
 
+        canCreateFractals = _canCreateFractals;
         // mint-ish
         emit Transfer(address(0), address(this), tokenId);
         // burn-ish
@@ -147,6 +149,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
     function updateAmountTobeLocked(uint256 _amountTobeLocked) public onlyOwner {
         amountTobeLocked = _amountTobeLocked;
+    }
+
+    function updateCanCreateFractal(bool _canCreateFractals) public onlyOwner {
+        canCreateFractals = _canCreateFractals;
     }
 
     /// @notice Get the most recently recorded rate of voting power decrease for `_tokenId`
@@ -532,8 +538,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _value Amount to deposit
     /// @param _to Address to deposit
     function _create_lock(uint _value, address _to) internal returns (uint) {
+        require(_value == amountTobeLocked, "The value must equal to amountTobeLocked");
+        require(canCreateFractals == true, "canCreateFractals must be true");
         require(_value > 0); // dev: need non-zero value
-
+        
         ++tokenId;
         uint _tokenId = tokenId;
         _mint(_to, _tokenId);
@@ -794,13 +802,13 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     }
 }
 
-contract AeraEmissionDistributor is AccessControl, Ownable {
+contract AraEmissionDistributor is AccessControl, Ownable {
     using SafeERC20 for IERC20;
 
     // TokenInfo Struct
     struct TokenInfo {
-        address user; // address from the owner of this aeFractalV2
-        uint256 numberNFT; // TokenId aeFractalV2
+        address user; // address from the owner of this araFractalV2
+        uint256 numberNFT; // TokenId araFractalV2
     }
 
     /******************** AnotherToken Structs **********************/
@@ -809,11 +817,11 @@ contract AeraEmissionDistributor is AccessControl, Ownable {
         uint256 anotherTokenPerBlock; // How much AnotherTokens Per Block
         uint256 allocPoint; // How many allocation points assigned to this pool. the fraction AnotherToken to distribute per block.
         uint256 lastRewardBlock; // Last block number that AnotherToken distribution occurs.
-        uint256 accAnotherTokenPerShare; // Accumulated AERA per aeFractalV2. this is multiplied by ACC_ANOTHERTOKEN_PRECISION for more exact results (rounding errors)
+        uint256 accAnotherTokenPerShare; // Accumulated ARA per araFractalV2. this is multiplied by ACC_ANOTHERTOKEN_PRECISION for more exact results (rounding errors)
     }
 
     struct UserInfoAnotherToken {
-        uint256 amount; // How many AERA locked by the user on veAERA.
+        uint256 amount; // How many ARA locked by the user on veARA.
         uint256 rewardDebt; // AnotherToken Reward debt.
     }
     /****************************************************************/
@@ -831,11 +839,11 @@ contract AeraEmissionDistributor is AccessControl, Ownable {
     mapping(address => uint256) public totalNftsByUser;
 
     uint256 private constant ACC_ANOTHERTOKEN_PRECISION = 1e12; // precision used for calculations involving another token
-    uint256 public constant POOL_PERCENTAGE = 0.876e3; // Percentage of AERA allocated to pools
+    uint256 public constant POOL_PERCENTAGE = 0.876e3; // Percentage of ARA allocated to pools
 
     uint256 public constant DENOMINATOR = 1e3; // Constant denominator for calculating allocation points
 
-    IERC721 public aeFractalV2; // aeFractalV2 ERC721 token
+    IERC721 public araFractalV2; // araFractalV2 ERC721 token
 
     /* AnotherToken Rewards Events*/
     event LogSetPoolAnotherToken(
@@ -854,25 +862,25 @@ contract AeraEmissionDistributor is AccessControl, Ownable {
     event LogUpdatePoolAnotherToken(
         uint256 indexed pid,
         uint256 lastRewardBlock,
-        uint256 totalAmountLockedAera,
-        uint256 accAERAPerShare
+        uint256 totalAmountLockedAra,
+        uint256 accARAPerShare
     );
 
     /* General Events */
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
 
     constructor(
-        IERC721 _aeFractalV2 // aeFractalV2 ERC721 token
+        IERC721 _araFractalV2 // araFractalV2 ERC721 token
     ) {
-        require(address(_aeFractalV2) != address(0), "invalid aeFractalV2's address");
-        aeFractalV2 = _aeFractalV2;
+        require(address(_araFractalV2) != address(0), "invalid araFractalV2's address");
+        araFractalV2 = _araFractalV2;
     }
 
-    // Function to deposit veAERA token to the contract and receive rewards
+    // Function to deposit veARA token to the contract and receive rewards
     function depositToChef(uint256 _pid, uint256 _tokenId) external {
-        // Check if msg.sender is the owner of the veAERA
-        address ownerOfTokenId = IERC721(aeFractalV2).ownerOf(_tokenId);
-        require(ownerOfTokenId == msg.sender, "You are not the owner of this veAERA");
+        // Check if msg.sender is the owner of the veARA
+        address ownerOfTokenId = IERC721(araFractalV2).ownerOf(_tokenId);
+        require(ownerOfTokenId == msg.sender, "You are not the owner of this veARA");
 
         // AnotherToken Rewards attributes
         PoolInfoAnotherToken memory poolAnotherToken = updatePoolAnotherToken(_pid);
@@ -881,9 +889,9 @@ contract AeraEmissionDistributor is AccessControl, Ownable {
         totalNftsByUser[msg.sender] = totalNftsByUser[msg.sender] + 1;
         tokenIdsByUser[msg.sender].push(_tokenId);
 
-        // Transfer the veAERA token from the user to the contract
-        ve(address(aeFractalV2)).transferFrom(msg.sender, address(this), _tokenId);
-        uint256 amount = uint256(ve(address(aeFractalV2)).locking(_tokenId));
+        // Transfer the veARA token from the user to the contract
+        ve(address(araFractalV2)).transferFrom(msg.sender, address(this), _tokenId);
+        uint256 amount = uint256(ve(address(araFractalV2)).locking(_tokenId));
 
         /******************** AnotherToken Rewards Code ********************/
         // AnotherToken Rewards Code
@@ -914,7 +922,7 @@ contract AeraEmissionDistributor is AccessControl, Ownable {
         PoolInfoAnotherToken memory poolAnotherToken = updatePoolAnotherToken(_pid);
         UserInfoAnotherToken storage userAnotherToken = userInfoAnotherToken[_pid][msg.sender][_tokenId];
 
-        uint256 amount = uint256(ve(address(aeFractalV2)).locking(_tokenId)); // amount of locked AERA on that veAERA
+        uint256 amount = uint256(ve(address(araFractalV2)).locking(_tokenId)); // amount of locked ARA on that veARA
 
         /******************** AnotherToken Rewards Code ********************/
             uint256 accumulatedWAnotherToken = (userAnotherToken.amount * poolAnotherToken.accAnotherTokenPerShare) /
@@ -928,7 +936,7 @@ contract AeraEmissionDistributor is AccessControl, Ownable {
             safeAnotherTokenTransfer(_pid, msg.sender, eligibleAnotherToken);
         /********************************************************************/
 
-        IERC721(aeFractalV2).safeTransferFrom(address(this), msg.sender, _tokenId); // transfer veAERA to his owner
+        IERC721(araFractalV2).safeTransferFrom(address(this), msg.sender, _tokenId); // transfer veARA to his owner
 
         uint256[] storage tokenIdsByCaller = tokenIdsByUser[msg.sender];
         for (uint256 i = 0; i < tokenIdsByCaller.length; ) {
@@ -979,7 +987,7 @@ contract AeraEmissionDistributor is AccessControl, Ownable {
         userAnotherToken.amount = 0;
         userAnotherToken.rewardDebt = 0;
         // Transfer the user's LP token back to them using the IERC721 contract
-        IERC721(aeFractalV2).safeTransferFrom(address(this), msg.sender, _tokenId);
+        IERC721(araFractalV2).safeTransferFrom(address(this), msg.sender, _tokenId);
 
         uint256[] memory tokenIdsByCaller = tokenIdsByUser[msg.sender];
         for (uint256 i = 0; i < tokenIdsByCaller.length; ) {
@@ -1057,7 +1065,7 @@ contract AeraEmissionDistributor is AccessControl, Ownable {
             // we take parts of the rewards for treasury, these can be subject to change, so we recalculate it a value of 1000 = 100%
             uint256 anotherTokenRewardsForPool = (anotherTokenRewards * DENOMINATOR) / DENOMINATOR;
 
-            // we calculate the new amount of accumulated anotherToken per veAERA
+            // we calculate the new amount of accumulated anotherToken per veARA
             accAnotherTokenPerShare =
                 accAnotherTokenPerShare +
                 ((anotherTokenRewardsForPool * ACC_ANOTHERTOKEN_PRECISION) / anotherTokenSupply);
