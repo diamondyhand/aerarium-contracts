@@ -909,9 +909,9 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
 
 pragma solidity ^0.6.7;
 
-contract StrategySpiritFarm is StrategyGeneralMasterChefBase {
+contract StrategyHummusFarm is StrategyGeneralMasterChefBase {
     // Token addresses
-    address public spirit = 0x4aAC94985cD83be30164DfE7e9AF7C054D7d2121;
+    address public hum = 0x4aAC94985cD83be30164DfE7e9AF7C054D7d2121;
     address public masterChef = 0x9cadd693cDb2B118F00252Bb3be4C6Df6A74d42C;
 
     constructor(
@@ -923,7 +923,7 @@ contract StrategySpiritFarm is StrategyGeneralMasterChefBase {
     )
       public
       StrategyGeneralMasterChefBase(
-        spirit,
+        hum,
         masterChef,
         pid, // pool id
         lp,
