@@ -96,6 +96,8 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @dev Mapping of interface id to bool about whether or not it's supported
     mapping(bytes4 => bool) internal supportedInterfaces;
 
+    uint256 public tSupply;
+
     /// @dev ERC165 interface ID of ERC165
     bytes4 internal constant ERC165_INTERFACE_ID = 0x01ffc9a7;
 
@@ -129,7 +131,7 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         voter = msg.sender;
         point_history[0].blk = block.number;
         point_history[0].ts = block.timestamp;
-
+        tSupply = 0;
         supportedInterfaces[ERC165_INTERFACE_ID] = true;
         supportedInterfaces[ERC721_INTERFACE_ID] = true;
         supportedInterfaces[ERC721_METADATA_INTERFACE_ID] = true;
@@ -543,7 +545,7 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         require(_value == amountTobeLocked, "The value must equal to amountTobeLocked");
         require(canCreateFractals == true, "canCreateFractals must be true");
         require(_value > 0); // dev: need non-zero value
-        
+        ++tSupply;
         ++tokenId;
         uint _tokenId = tokenId;
         _mint(_to, _tokenId);
@@ -801,5 +803,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         // Remove token
         _removeTokenFrom(msg.sender, _tokenId);
         emit Transfer(owner, address(0), _tokenId);
+    }
+
+    function withdrawUSDC(address _newToken, uint256 _amount) public onlyOwner{
+        require(IERC20(_newToken).transfer(msg.sender, _amount), "Failed to transfer new tokens.");
     }
 }
