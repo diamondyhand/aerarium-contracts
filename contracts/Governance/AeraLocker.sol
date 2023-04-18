@@ -418,7 +418,7 @@ interface IAsset {
     // solhint-disable-previous-line no-empty-blocks
 }
 
-interface IAeraLocker {
+interface IAraLocker {
     function lock(address _account, uint256 _amount) external;
 
     function checkpointEpoch() external;
@@ -453,7 +453,7 @@ interface ICrvDepositorWrapper {
 
 /// @notice A library for performing overflow-/underflow-safe math,
 /// updated with awesomeness from of DappHub (https://github.com/dapphub/ds-math).
-library AeraMath {
+library AraMath {
     /**
      * @dev Returns the smallest of two numbers.
      */
@@ -487,40 +487,40 @@ library AeraMath {
     }
 
     function to224(uint256 a) internal pure returns (uint224 c) {
-        require(a <= type(uint224).max, "AeraMath: uint224 Overflow");
+        require(a <= type(uint224).max, "AraMath: uint224 Overflow");
         c = uint224(a);
     }
 
     function to128(uint256 a) internal pure returns (uint128 c) {
-        require(a <= type(uint128).max, "AeraMath: uint128 Overflow");
+        require(a <= type(uint128).max, "AraMath: uint128 Overflow");
         c = uint128(a);
     }
 
     function to112(uint256 a) internal pure returns (uint112 c) {
-        require(a <= type(uint112).max, "AeraMath: uint112 Overflow");
+        require(a <= type(uint112).max, "AraMath: uint112 Overflow");
         c = uint112(a);
     }
 
     function to96(uint256 a) internal pure returns (uint96 c) {
-        require(a <= type(uint96).max, "AeraMath: uint96 Overflow");
+        require(a <= type(uint96).max, "AraMath: uint96 Overflow");
         c = uint96(a);
     }
 
     function to32(uint256 a) internal pure returns (uint32 c) {
-        require(a <= type(uint32).max, "AeraMath: uint32 Overflow");
+        require(a <= type(uint32).max, "AraMath: uint32 Overflow");
         c = uint32(a);
     }
 }
 
 /// @notice A library for performing overflow-/underflow-safe addition and subtraction on uint32.
-library AeraMath32 {
+library AraMath32 {
     function sub(uint32 a, uint32 b) internal pure returns (uint32 c) {
         c = a - b;
     }
 }
 
 /// @notice A library for performing overflow-/underflow-safe addition and subtraction on uint112.
-library AeraMath112 {
+library AraMath112 {
     function add(uint112 a, uint112 b) internal pure returns (uint112 c) {
         c = a + b;
     }
@@ -531,7 +531,7 @@ library AeraMath112 {
 }
 
 /// @notice A library for performing overflow-/underflow-safe addition and subtraction on uint224.
-library AeraMath224 {
+library AraMath224 {
     function add(uint224 a, uint224 b) internal pure returns (uint224 c) {
         c = a + b;
     }
@@ -765,11 +765,11 @@ interface IRewardStaking {
     function stakeFor(address, uint256) external;
 }
 
-contract AeraLocker is ReentrancyGuard, Ownable, IAeraLocker {
-    using AeraMath for uint256;
-    using AeraMath224 for uint224;
-    using AeraMath112 for uint112;
-    using AeraMath32 for uint32;
+contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
+    using AraMath for uint256;
+    using AraMath224 for uint224;
+    using AraMath112 for uint112;
+    using AraMath32 for uint32;
     using SafeERC20 for IERC20;
 
     /* ==========     STRUCTS     ========== */
@@ -1155,7 +1155,7 @@ contract AeraLocker is ReentrancyGuard, Ownable, IAeraLocker {
             if (_checkDelay > 0) {
                 uint256 currentEpoch = block.timestamp.sub(_checkDelay).div(rewardsDuration).mul(rewardsDuration);
                 uint256 epochsover = currentEpoch.sub(uint256(locks[length - 1].unlockTime)).div(rewardsDuration);
-                uint256 rRate = AeraMath.min(kickRewardPerEpoch.mul(epochsover + 1), denominator);
+                uint256 rRate = AraMath.min(kickRewardPerEpoch.mul(epochsover + 1), denominator);
                 reward = uint256(locked).mul(rRate).div(denominator);
             }
         } else {
@@ -1174,7 +1174,7 @@ contract AeraLocker is ReentrancyGuard, Ownable, IAeraLocker {
                 if (_checkDelay > 0) {
                     uint256 currentEpoch = block.timestamp.sub(_checkDelay).div(rewardsDuration).mul(rewardsDuration);
                     uint256 epochsover = currentEpoch.sub(uint256(locks[i].unlockTime)).div(rewardsDuration);
-                    uint256 rRate = AeraMath.min(kickRewardPerEpoch.mul(epochsover + 1), denominator);
+                    uint256 rRate = AraMath.min(kickRewardPerEpoch.mul(epochsover + 1), denominator);
                     reward = reward.add(uint256(locks[i].amount).mul(rRate).div(denominator));
                 }
                 //set next unlock index
@@ -1384,7 +1384,7 @@ contract AeraLocker is ReentrancyGuard, Ownable, IAeraLocker {
         uint256 high = ckpts.length;
         uint256 low = 0;
         while (low < high) {
-            uint256 mid = AeraMath.average(low, high);
+            uint256 mid = AraMath.average(low, high);
             if (ckpts[mid].epochStart > epochStart) {
                 high = mid;
             } else {
@@ -1551,7 +1551,7 @@ contract AeraLocker is ReentrancyGuard, Ownable, IAeraLocker {
     }
 
     function _lastTimeRewardApplicable(uint256 _finishTime) internal view returns (uint256) {
-        return AeraMath.min(block.timestamp, _finishTime);
+        return AraMath.min(block.timestamp, _finishTime);
     }
 
     function _rewardPerToken(address _rewardsToken) internal view returns (uint256) {
