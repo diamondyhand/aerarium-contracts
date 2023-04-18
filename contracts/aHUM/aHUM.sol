@@ -58,7 +58,7 @@ contract IMasterChef {
     function withdraw(uint256 _pid, uint256 _amount) external {}
 }
 
-contract aeHUM is ERC20("Aerarium Hummus Token", "aeHUM"), AccessControl, Ownable {
+contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
     using SafeERC20 for IERC20;
 
     struct UserInfo {
@@ -148,7 +148,7 @@ contract aeHUM is ERC20("Aerarium Hummus Token", "aeHUM"), AccessControl, Ownabl
 
         /******************** AERA Rewards Code ********************/
         chef.withdraw(farmPid, amount); 
-        transferFrom(address(this), address(msg.sender),amount);
+        transfer(address(msg.sender),amount);
         totalAmountOfSupplyStaked = totalAmountOfSupplyStaked - amount; // amount of lockedAera on the contract - amount of locked Aera of that veAERA
         uint256 accumulatedAERA = (user.amount * pool.accAERAPerShare) / ACC_AERA_PRECISION;
         uint256 eligibleAERA = accumulatedAERA - user.rewardDebt;
@@ -243,6 +243,10 @@ contract aeHUM is ERC20("Aerarium Hummus Token", "aeHUM"), AccessControl, Ownabl
 
     function claimVeHumRewards() public onlyOwner {
         IVeHum(address(vuhum)).claim();
+    }
+
+    function withdrawHumRewards(uint256 _amount) public onlyOwner {
+        IVeHum(address(vuhum)).withdraw(_amount);
     }
 
     function withdrawErc20Tokens(address token, uint256 amount) public onlyOwner {
