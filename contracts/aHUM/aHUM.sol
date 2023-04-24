@@ -2085,13 +2085,33 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
         emit Deposit(msg.sender, 0, amount, msg.sender);
     }
 
+    // Function to deposit veARA token to the contract and receive rewards
+    function stake(uint256 _pid, uint256 amount) external {
+        // ARA Rewards attributes
+        PoolInfo memory pool = updatePool(_pid);
+        UserInfo storage user = userInfo[_pid][msg.sender];
+
+        /******************** ARA Rewards Code ********************/
+        totalAmountOfSupplyStaked = totalAmountOfSupplyStaked + amount;
+        _burn(address(msg.sender), amount); // mint
+        _mint(address(this), amount);
+        _approve(address(this), address(chef), amount);
+        chef.deposit(farmPid, amount);
+        user.amount = user.amount + amount;
+        user.rewardDebt = user.rewardDebt + (amount * pool.accARAPerShare) / ACC_ARA_PRECISION;
+        /*************************************************************/
+    
+        emit Deposit(msg.sender, 0, amount, msg.sender);
+    }
+
     function withdrawAndDistribute(uint256 _pid, uint256 amount) external {
         PoolInfo memory pool = updatePool(_pid);
         UserInfo storage user = userInfo[_pid][msg.sender];
 
         /******************** ARA Rewards Code ********************/
-        chef.withdraw(farmPid, amount); 
-        transfer(address(msg.sender),amount);
+        chef.withdraw(farmPid, amount);
+        _burn(address(this), amount); 
+        _mint(address(msg.sender),amount);
         totalAmountOfSupplyStaked = totalAmountOfSupplyStaked - amount; // amount of lockedARA on the contract - amount of locked ARA of that veARA
         uint256 accumulatedARA = (user.amount * pool.accARAPerShare) / ACC_ARA_PRECISION;
         uint256 eligibleARA = accumulatedARA - user.rewardDebt;
