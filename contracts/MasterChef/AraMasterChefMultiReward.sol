@@ -1066,6 +1066,8 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     // Deposit Fee address
     address public feeAddress;
 
+    mapping(address => uint256) public rewardPerBlock;
+
     // Info of each pool.
     PoolInfo[] public poolInfo;
     // Info of each user that stakes LP tokens.
@@ -1087,14 +1089,12 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
 
 
     constructor(
-        IERC20 _ara,
         address _devaddr,
         address _feeAddress,
         uint256 _araPerBlock
         ) public {
         devaddr = _devaddr;
         feeAddress = _feeAddress;
-        araPerBlock = _araPerBlock;
     }
 
     function poolLength() external view returns (uint256) {
@@ -1118,7 +1118,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
             allocPoint: _allocPoint,	
             lastRewardBlock: lastRewardBlock,	
             totalRewardDebt: 0,	
-            rewardTokens: _rewardTokens	
+            rewardTokens: _rewardTokens,
             depositFeeBP : _depositFeeBP
         }));	
         for (uint256 i = 0; i < _rewardTokens.length; i++) {	
@@ -1127,12 +1127,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         emit AddPool(poolInfo.length.sub(1), _allocPoint, address(_lpToken), _rewardTokens);	
     }
 
-    // Update the given pool's ara allocation point and deposit fee. Can only be called by the owner.
-   
-       
-    }
-
-    function setPool(uint256 _pid, uint256 _allocPoint,  uint16 _depositFeeBP,  IStrategy _strategy, bool _withUpdate, address[] memory _rewardTokens) public onlyOwner {
+    function set(uint256 _pid, uint256 _allocPoint,  uint16 _depositFeeBP,  IStrategy _strategy, bool _withUpdate, address[] memory _rewardTokens) public onlyOwner {
         require(_depositFeeBP <= 10000, "set: invalid deposit fee basis points");
         for (uint256 i = 0; i < _rewardTokens.length; i++) {
             require(_rewardTokens[i] != address(0), "setPool: invalid reward token address");
@@ -1186,7 +1181,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         return _to.sub(_from).mul(BONUS_MULTIPLIER);
     }
 
-     function pendingReward(uint256 _pid, address _user, address _rewardToken) external view returns (uint256) {
+    function pendingReward(uint256 _pid, address _user, address _rewardToken) external view returns (uint256) {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accRewardPerShare = pool.accRewardPerShare[_rewardToken];
@@ -1198,7 +1193,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
             lpSupply = pool.lpToken.balanceOf(address(this));
         }
         if (block.timestamp > pool.lastRewardBlock && lpSupply != 0) {
-            uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.timestamp, _rewardToken);
+            uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.timestamp);
             uint256 reward = multiplier.mul(rewardPerBlock[_rewardToken]).mul(pool.allocPoint).div(totalAllocPoint);
             accRewardPerShare = accRewardPerShare.add(reward.mul(1e12).div(lpSupply));
         }
@@ -1231,7 +1226,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         }
         for (uint256 i = 0; i < pool.rewardTokens.length; i++) {
             address rewardToken = pool.rewardTokens[i];
-            uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number, rewardToken);
+            uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.timestamp);
             uint256 reward = multiplier.mul(rewardPerBlock[rewardToken]).mul(pool.allocPoint).div(totalAllocPoint);
             pool.accRewardPerShare[rewardToken] = pool.accRewardPerShare[rewardToken].add(reward.mul(1e12).div(lpSupply));
         }
@@ -1325,22 +1320,18 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         emit EmergencyWithdraw(msg.sender, _pid, amount);
     }
 
-    // Safe ara transfer function, just in case if rounding error causes pool to not have enough ARAs.
-    function safeRewardTransfer(address _to, uint256 _amount) internal {
-        uint256 araBal = ara.balanceOf(address(this));
-        bool transferSuccess = false;
-        if (_amount > araBal) {
-            transferSuccess = ara.transfer(_to, araBal);
+    function safeRewardTransfer(address _rewardToken, address _to, uint256 _amount) internal {
+        uint256 rewardBal = IERC20(_rewardToken).balanceOf(address(this));
+        if (_amount > rewardBal) {
+            IERC20(_rewardToken).transfer(_to, rewardBal);
         } else {
-            transferSuccess = ara.transfer(_to, _amount);
+            IERC20(_rewardToken).transfer(_to, _amount);
         }
-        require(transferSuccess, "safeAraTransfer: transfer failed");
     }
 
     function setFeeAddress(address _feeAddress) public {
         require(msg.sender == feeAddress, "setFeeAddress: FORBIDDEN");
         feeAddress = _feeAddress;
-        emit SetFeeAddress(msg.sender, _feeAddress);
     }
 
     function _depositAllToStrategy(uint256 _pid, IStrategy _strategy) internal {
