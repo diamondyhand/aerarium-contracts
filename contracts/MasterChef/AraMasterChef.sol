@@ -1039,6 +1039,7 @@ contract IMasterChef {
 pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
+
 contract AraMasterChef is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeBEP20 for IBEP20;
@@ -1122,7 +1123,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         if (_withUpdate) {
             massUpdatePools();
         }
-        uint256 lastRewardBlock = block.number;
+        uint256 lastRewardBlock = block.timestamp;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         strategies.push(_strategy);
         lpToken.push(IERC20(_lpToken));
@@ -1172,8 +1173,8 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         else {
             lpSupply = pool.lpToken.balanceOf(address(this));
         }
-        if (block.number > pool.lastRewardBlock && lpSupply != 0) {
-            uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+        if (block.timestamp > pool.lastRewardBlock && lpSupply != 0) {
+            uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.timestamp);
             uint256 araReward = multiplier.mul(araPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
             accAraPerShare = accAraPerShare.add(araReward.mul(1e12).div(lpSupply));
         }
@@ -1191,7 +1192,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     // Update reward variables of the given pool to be up-to-date.
     function updatePool(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
-        if (block.number <= pool.lastRewardBlock) {
+        if (block.timestamp <= pool.lastRewardBlock) {
             return;
         }
         uint256 lpSupply;
@@ -1202,15 +1203,15 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
                 lpSupply = pool.lpToken.balanceOf(address(this));
         }
         if (lpSupply == 0 || pool.allocPoint == 0) {
-            pool.lastRewardBlock = block.number;
+            pool.lastRewardBlock = block.timestamp;
             return;
         }
-        uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+        uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.timestamp);
         uint256 araReward = multiplier.mul(araPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
         ara.transfer(devaddr, araReward.div(12));
         ara.transfer(address(this), araReward);
         pool.accAraPerShare = pool.accAraPerShare.add(araReward.mul(1e12).div(lpSupply));
-        pool.lastRewardBlock = block.number;
+        pool.lastRewardBlock = block.timestamp;
     }
 
     // Deposit LP tokens to MasterChef for ara allocation.
