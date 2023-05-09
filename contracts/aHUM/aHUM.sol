@@ -2001,7 +2001,7 @@ contract IMasterChef {
     function withdraw(uint256 _pid, uint256 _amount) external {}
 }
 
-contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
+contract aHUM is ERC20("Ara wrapped Hummus", "aHUM"), AccessControl, Ownable {
     using SafeERC20 for IERC20;
 
     struct UserInfo {
