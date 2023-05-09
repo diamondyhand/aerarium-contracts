@@ -63,8 +63,8 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     mapping(uint => bool) public voted;
     address public voter;
 
-    string constant public name = "Fractals";
-    string constant public symbol = "Fractal NFT";
+    string constant public name = "araFractalV2";
+    string constant public symbol = "araFractal";
     string constant public version = "1.0.0";
     uint8 constant public decimals = 18;
 

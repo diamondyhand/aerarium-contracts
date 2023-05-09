@@ -946,7 +946,7 @@ contract AraFiToken is ERC20Burnable, Operator {
     /**
      * @notice Constructs the ARA ERC-20 contract.
      */
-    constructor() public ERC20("AraFi", "ARA") {
+    constructor() public ERC20("AraFi Token", "ARA") {
         _mint(msg.sender, 1000000 ether);
     }
 }
