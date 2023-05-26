@@ -1079,7 +1079,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     // ara tokens created per block.
     uint256 public araPerBlock;
     // Bonus muliplier for early ara makers.
-    uint256 public constant BONUS_MULTIPLIER = 1;
+    uint256 public BONUS_MULTIPLIER = 1;
     // Deposit Fee address
     address public feeAddress;
 
@@ -1160,6 +1160,11 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
         return _to.sub(_from).mul(BONUS_MULTIPLIER);
     }
+
+    function setMultiplier(uint256 _BONUS_MULTIPLIER) public onlyOwner{
+        BONUS_MULTIPLIER = _BONUS_MULTIPLIER;
+    }
+
 
     // View function to see pending ARAs on frontend.
     function pendingAra(uint256 _pid, address _user) external view returns (uint256) {

@@ -1062,7 +1062,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     // Dev address.
     address public devaddr;
     // Bonus muliplier for early ara makers.
-    uint256 public constant BONUS_MULTIPLIER = 1;
+    uint256 public BONUS_MULTIPLIER = 1;
     // Deposit Fee address
     address public feeAddress;
 
@@ -1179,6 +1179,10 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
         return _to.sub(_from).mul(BONUS_MULTIPLIER);
+    }
+
+    function setMultiplier(uint256 _BONUS_MULTIPLIER) public onlyOwner{
+        BONUS_MULTIPLIER = _BONUS_MULTIPLIER;
     }
 
     function pendingReward(uint256 _pid, address _user, address _rewardToken) external view returns (uint256) {
