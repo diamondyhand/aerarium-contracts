@@ -523,7 +523,7 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
         address from = msg.sender;
         if (_value != 0 && deposit_type != DepositType.MERGE_TYPE) {
-            assert(IERC20(token).transferFrom(from, address(this), _value));
+            IERC20(token).safeTransferFrom(from, address(this), _value);
         }
 
         emit Deposit(
