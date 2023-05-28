@@ -1574,9 +1574,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         uint256 araBal = ara.balanceOf(address(this));
         bool transferSuccess = false;
         if (_amount > araBal) {
-            transferSuccess = ara.transfer(_to, araBal);
+            transferSuccess = ara.safeTransfer(_to, araBal);
         } else {
-            transferSuccess = ara.transfer(_to, _amount);
+            transferSuccess = ara.safeTransfer(_to, _amount);
         }
         require(transferSuccess, "safeAraTransfer: transfer failed");
     }
