@@ -1477,8 +1477,8 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
             .mul(araPerBlock)
             .mul(pool.allocPoint)
             .div(totalAllocPoint);
-        ara.transfer(devaddr, araReward.div(12));
-        ara.transfer(address(this), araReward);
+        ara.safeTransfer(devaddr, araReward.div(12));
+        ara.safeTransfer(address(this), araReward);
         pool.accAraPerShare = pool.accAraPerShare.add(
             araReward.mul(1e12).div(lpSupply)
         );
