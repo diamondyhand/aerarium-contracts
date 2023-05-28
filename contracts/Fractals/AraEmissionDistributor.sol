@@ -46,7 +46,7 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     uint internal constant WEEK = 1 weeks;
     uint internal constant MULTIPLIER = 1 ether;
 
-    address immutable public token;
+    address public immutable token;
     uint public supply;
     mapping(uint => LockedBalance) public locked;
 
@@ -63,10 +63,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     mapping(uint => bool) public voted;
     address public voter;
 
-    string constant public name = "araFractalV2";
-    string constant public symbol = "araFractal";
-    string constant public version = "1.0.0";
-    uint8 constant public decimals = 18;
+    string public constant name = "araFractalV2";
+    string public constant symbol = "araFractal";
+    string public constant version = "1.0.0";
+    uint8 public constant decimals = 18;
 
     /// @dev Current count of token
     uint internal tokenId;
@@ -143,11 +143,15 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
     /// @dev Interface identification is specified in ERC-165.
     /// @param _interfaceID Id of the interface
-    function supportsInterface(bytes4 _interfaceID) external view returns (bool) {
+    function supportsInterface(
+        bytes4 _interfaceID
+    ) external view returns (bool) {
         return supportedInterfaces[_interfaceID];
     }
 
-    function updateAmountTobeLocked(uint256 _amountTobeLocked) public onlyOwner {
+    function updateAmountTobeLocked(
+        uint256 _amountTobeLocked
+    ) public onlyOwner {
         amountTobeLocked = _amountTobeLocked;
     }
 
@@ -167,7 +171,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _tokenId token of the NFT
     /// @param _idx User epoch number
     /// @return Epoch time of the checkpoint
-    function user_point_history__ts(uint _tokenId, uint _idx) external view returns (uint) {
+    function user_point_history__ts(
+        uint _tokenId,
+        uint _idx
+    ) external view returns (uint) {
         return user_point_history[_tokenId][_idx].ts;
     }
 
@@ -207,12 +214,18 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @dev Checks if `_operator` is an approved operator for `_owner`.
     /// @param _owner The address that owns the NFTs.
     /// @param _operator The address that acts on behalf of the owner.
-    function isApprovedForAll(address _owner, address _operator) external view returns (bool) {
+    function isApprovedForAll(
+        address _owner,
+        address _operator
+    ) external view returns (bool) {
         return (ownerToOperators[_owner])[_operator];
     }
 
     /// @dev  Get token by index
-    function tokenOfOwnerByIndex(address _owner, uint _tokenIndex) external view returns (uint) {
+    function tokenOfOwnerByIndex(
+        address _owner,
+        uint _tokenIndex
+    ) external view returns (uint) {
         return ownerToNFTokenIdList[_owner][_tokenIndex];
     }
 
@@ -220,7 +233,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _spender address of the spender to query
     /// @param _tokenId uint ID of the token to be transferred
     /// @return bool whether the msg.sender is approved for the given token ID, is an operator of the owner, or is the owner of the token
-    function _isApprovedOrOwner(address _spender, uint _tokenId) internal view returns (bool) {
+    function _isApprovedOrOwner(
+        address _spender,
+        uint _tokenId
+    ) internal view returns (bool) {
         address owner = idToOwner[_tokenId];
         bool spenderIsOwner = owner == _spender;
         bool spenderIsApproved = _spender == idToApprovals[_tokenId];
@@ -228,7 +244,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         return spenderIsOwner || spenderIsApproved || spenderIsApprovedForAll;
     }
 
-    function isApprovedOrOwner(address _spender, uint _tokenId) external view returns (bool) {
+    function isApprovedOrOwner(
+        address _spender,
+        uint _tokenId
+    ) external view returns (bool) {
         return _isApprovedOrOwner(_spender, _tokenId);
     }
 
@@ -247,7 +266,7 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _tokenId uint ID Of the token to be removed
     function _removeTokenFromOwnerList(address _from, uint _tokenId) internal {
         // Delete
-        uint current_count = _balance(_from)-1;
+        uint current_count = _balance(_from) - 1;
         uint current_index = tokenToOwnerIndex[_tokenId];
 
         if (current_count == current_index) {
@@ -346,11 +365,7 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _from The current owner of the NFT.
     /// @param _to The new owner.
     /// @param _tokenId The NFT to transfer.
-    function transferFrom(
-        address _from,
-        address _to,
-        uint _tokenId
-    ) external {
+    function transferFrom(address _from, address _to, uint _tokenId) external {
         _transferFrom(_from, _to, _tokenId, msg.sender);
     }
 
@@ -387,11 +402,18 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
         if (_isContract(_to)) {
             // Throws if transfer destination is a contract which does not implement 'onERC721Received'
-            try IERC721Receiver(_to).onERC721Received(msg.sender, _from, _tokenId, _data) returns (bytes4) {} catch (
-                bytes memory reason
-            ) {
+            try
+                IERC721Receiver(_to).onERC721Received(
+                    msg.sender,
+                    _from,
+                    _tokenId,
+                    _data
+                )
+            returns (bytes4) {} catch (bytes memory reason) {
                 if (reason.length == 0) {
-                    revert('ERC721: transfer to non ERC721Receiver implementer');
+                    revert(
+                        "ERC721: transfer to non ERC721Receiver implementer"
+                    );
                 } else {
                     assembly {
                         revert(add(32, reason), mload(reason))
@@ -417,7 +439,7 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         address _to,
         uint _tokenId
     ) external {
-        safeTransferFrom(_from, _to, _tokenId, '');
+        safeTransferFrom(_from, _to, _tokenId, "");
     }
 
     /// @dev Set or reaffirm the approved address for an NFT. The zero address indicates there is no approved address.
@@ -497,10 +519,17 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
         address from = msg.sender;
         if (_value != 0 && deposit_type != DepositType.MERGE_TYPE) {
-            assert(IERC20(token).transferFrom(from, address(this), _value));
+            IERC20(token).safeTransferFrom(from, address(this), _value);
         }
 
-        emit Deposit(from, _tokenId, _value, _locked.end, deposit_type, block.timestamp);
+        emit Deposit(
+            from,
+            _tokenId,
+            _value,
+            _locked.end,
+            deposit_type,
+            block.timestamp
+        );
         emit Supply(supply_before, supply_before + _value);
     }
 
@@ -522,12 +551,12 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
     function attach(uint _tokenId) external {
         require(msg.sender == voter);
-        attachments[_tokenId] = attachments[_tokenId]+1;
+        attachments[_tokenId] = attachments[_tokenId] + 1;
     }
 
     function detach(uint _tokenId) external {
         require(msg.sender == voter);
-        attachments[_tokenId] = attachments[_tokenId]-1;
+        attachments[_tokenId] = attachments[_tokenId] - 1;
     }
 
     function block_number() external view returns (uint) {
@@ -538,22 +567,33 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _value Amount to deposit
     /// @param _to Address to deposit
     function _create_lock(uint _value, address _to) internal returns (uint) {
-        require(_value == amountTobeLocked, "The value must equal to amountTobeLocked");
+        require(
+            _value == amountTobeLocked,
+            "The value must equal to amountTobeLocked"
+        );
         require(canCreateFractals == true, "canCreateFractals must be true");
         require(_value > 0); // dev: need non-zero value
-        
+
         ++tokenId;
         uint _tokenId = tokenId;
         _mint(_to, _tokenId);
 
-        _deposit_for(_tokenId, _value, locked[_tokenId], DepositType.CREATE_LOCK_TYPE);
+        _deposit_for(
+            _tokenId,
+            _value,
+            locked[_tokenId],
+            DepositType.CREATE_LOCK_TYPE
+        );
         return _tokenId;
     }
 
     /// @notice Deposit `_value` tokens for `_to` and lock for `_lock_duration`
     /// @param _value Amount to deposit
     /// @param _to Address to deposit
-    function create_lock_for(uint _value, address _to) external nonreentrant returns (uint) {
+    function create_lock_for(
+        uint _value,
+        address _to
+    ) external nonreentrant returns (uint) {
         return _create_lock(_value, _to);
     }
 
@@ -571,7 +611,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _block Block to find
     /// @param max_epoch Don't go beyond this epoch
     /// @return Approximate timestamp for block
-    function _find_block_epoch(uint _block, uint max_epoch) internal view returns (uint) {
+    function _find_block_epoch(
+        uint _block,
+        uint max_epoch
+    ) internal view returns (uint) {
         // Binary search
         uint _min = 0;
         uint _max = max_epoch;
@@ -595,13 +638,18 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _tokenId NFT for lock
     /// @param _t Epoch time to return voting power at
     /// @return User voting power
-    function _balanceOfNFT(uint _tokenId, uint _t) internal view returns (uint) {
+    function _balanceOfNFT(
+        uint _tokenId,
+        uint _t
+    ) internal view returns (uint) {
         uint _epoch = user_point_epoch[_tokenId];
         if (_epoch == 0) {
             return 0;
         } else {
             Point memory last_point = user_point_history[_tokenId][_epoch];
-            last_point.bias -= last_point.slope * int128(int256(_t) - int256(last_point.ts));
+            last_point.bias -=
+                last_point.slope *
+                int128(int256(_t) - int256(last_point.ts));
             if (last_point.bias < 0) {
                 last_point.bias = 0;
             }
@@ -612,15 +660,18 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @dev Returns current token URI metadata
     /// @param _tokenId Token ID to fetch URI for.
     function tokenURI(uint _tokenId) external view returns (string memory) {
-        require(idToOwner[_tokenId] != address(0), "Query for nonexistent token");
+        require(
+            idToOwner[_tokenId] != address(0),
+            "Query for nonexistent token"
+        );
         LockedBalance memory _locked = locked[_tokenId];
         return
-        _tokenURI(
-            _tokenId,
-            _balanceOfNFT(_tokenId, block.timestamp),
-            _locked.end,
-            uint(int256(_locked.amount))
-        );
+            _tokenURI(
+                _tokenId,
+                _balanceOfNFT(_tokenId, block.timestamp),
+                _locked.end,
+                uint(int256(_locked.amount))
+            );
     }
 
     function balanceOfNFT(uint _tokenId) external view returns (uint) {
@@ -628,7 +679,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         return _balanceOfNFT(_tokenId, block.timestamp);
     }
 
-    function balanceOfNFTAt(uint _tokenId, uint _t) external view returns (uint) {
+    function balanceOfNFTAt(
+        uint _tokenId,
+        uint _t
+    ) external view returns (uint) {
         return _balanceOfNFT(_tokenId, _t);
     }
 
@@ -637,7 +691,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _tokenId User's wallet NFT
     /// @param _block Block to calculate the voting power at
     /// @return Voting power
-    function _balanceOfAtNFT(uint _tokenId, uint _block) internal view returns (uint) {
+    function _balanceOfAtNFT(
+        uint _tokenId,
+        uint _block
+    ) internal view returns (uint) {
         // Copying and pasting totalSupply code because Vyper cannot pass by
         // reference yet
         assert(_block <= block.number);
@@ -686,7 +743,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         }
     }
 
-    function balanceOfAtNFT(uint _tokenId, uint _block) external view returns (uint) {
+    function balanceOfAtNFT(
+        uint _tokenId,
+        uint _block
+    ) external view returns (uint) {
         return _balanceOfAtNFT(_tokenId, _block);
     }
 
@@ -694,7 +754,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param point The point (bias/slope) to start search from
     /// @param t Time to calculate the total voting power at
     /// @return Total voting power at that time
-    function _supply_at(Point memory point, uint t) internal view returns (uint) {
+    function _supply_at(
+        Point memory point,
+        uint t
+    ) internal view returns (uint) {
         Point memory last_point = point;
         uint t_i = (last_point.ts / WEEK) * WEEK;
         for (uint i = 0; i < 255; ++i) {
@@ -705,7 +768,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
             } else {
                 d_slope = slope_changes[t_i];
             }
-            last_point.bias -= last_point.slope * int128(int256(t_i - last_point.ts));
+            last_point.bias -=
+                last_point.slope *
+                int128(int256(t_i - last_point.ts));
             if (t_i == t) {
                 break;
             }
@@ -745,26 +810,77 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         if (target_epoch < _epoch) {
             Point memory point_next = point_history[target_epoch + 1];
             if (point.blk != point_next.blk) {
-                dt = ((_block - point.blk) * (point_next.ts - point.ts)) / (point_next.blk - point.blk);
+                dt =
+                    ((_block - point.blk) * (point_next.ts - point.ts)) /
+                    (point_next.blk - point.blk);
             }
         } else {
             if (point.blk != block.number) {
-                dt = ((_block - point.blk) * (block.timestamp - point.ts)) / (block.number - point.blk);
+                dt =
+                    ((_block - point.blk) * (block.timestamp - point.ts)) /
+                    (block.number - point.blk);
             }
         }
         // Now dt contains info on how far are we beyond point
         return _supply_at(point, point.ts + dt);
     }
 
-    function _tokenURI(uint _tokenId, uint _balanceOf, uint _locked_end, uint _value) internal pure returns (string memory output) {
+    function _tokenURI(
+        uint _tokenId,
+        uint _balanceOf,
+        uint _locked_end,
+        uint _value
+    ) internal pure returns (string memory output) {
         output = '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350"><style>.base { fill: white; font-family: serif; font-size: 14px; }</style><rect width="100%" height="100%" fill="black" /><text x="10" y="20" class="base">';
-        output = string(abi.encodePacked(output, "token ", toString(_tokenId), '</text><text x="10" y="40" class="base">'));
-        output = string(abi.encodePacked(output, "balanceOf ", toString(_balanceOf), '</text><text x="10" y="60" class="base">'));
-        output = string(abi.encodePacked(output, "locked_end ", toString(_locked_end), '</text><text x="10" y="80" class="base">'));
-        output = string(abi.encodePacked(output, "value ", toString(_value), '</text></svg>'));
+        output = string(
+            abi.encodePacked(
+                output,
+                "token ",
+                toString(_tokenId),
+                '</text><text x="10" y="40" class="base">'
+            )
+        );
+        output = string(
+            abi.encodePacked(
+                output,
+                "balanceOf ",
+                toString(_balanceOf),
+                '</text><text x="10" y="60" class="base">'
+            )
+        );
+        output = string(
+            abi.encodePacked(
+                output,
+                "locked_end ",
+                toString(_locked_end),
+                '</text><text x="10" y="80" class="base">'
+            )
+        );
+        output = string(
+            abi.encodePacked(
+                output,
+                "value ",
+                toString(_value),
+                "</text></svg>"
+            )
+        );
 
-        string memory json = Base64.encode(bytes(string(abi.encodePacked('{"name": "lock #', toString(_tokenId), '", "description": "Solidly locks, can be used to boost gauge yields, vote on token emission, and receive bribes", "image": "data:image/svg+xml;base64,', Base64.encode(bytes(output)), '"}'))));
-        output = string(abi.encodePacked('data:application/json;base64,', json));
+        string memory json = Base64.encode(
+            bytes(
+                string(
+                    abi.encodePacked(
+                        '{"name": "lock #',
+                        toString(_tokenId),
+                        '", "description": "Solidly locks, can be used to boost gauge yields, vote on token emission, and receive bribes", "image": "data:image/svg+xml;base64,',
+                        Base64.encode(bytes(output)),
+                        '"}'
+                    )
+                )
+            )
+        );
+        output = string(
+            abi.encodePacked("data:application/json;base64,", json)
+        );
     }
 
     function toString(uint value) internal pure returns (string memory) {
@@ -790,7 +906,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     }
 
     function _burn(uint _tokenId) internal {
-        require(_isApprovedOrOwner(msg.sender, _tokenId), "caller is not owner nor approved");
+        require(
+            _isApprovedOrOwner(msg.sender, _tokenId),
+            "caller is not owner nor approved"
+        );
 
         address owner = ownerOf(_tokenId);
 
@@ -828,7 +947,8 @@ contract AraEmissionDistributor is AccessControl, Ownable {
 
     PoolInfoAnotherToken[] public poolInfoAnotherToken; // an array to store information of all pools of another token
     uint256 public totalPidsAnotherToken = 0; // total number of another token pools
-    mapping(uint256 => mapping(address => mapping(uint256 => UserInfoAnotherToken))) public userInfoAnotherToken; // mapping form poolId => user Address => User Info
+    mapping(uint256 => mapping(address => mapping(uint256 => UserInfoAnotherToken)))
+        public userInfoAnotherToken; // mapping form poolId => user Address => User Info
 
     TokenInfo[] public tokenInfo; // mapping form poolId => user Address => User Info
 
@@ -856,9 +976,23 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         address indexed tokenReward,
         uint256 allocPoint
     );
-    event DepositAnotherToken(address indexed user, uint256 indexed pid, uint256 amount, address indexed to);
-    event WithdrawAnotherToken(address indexed user, uint256 indexed pid, uint256 amount, address indexed to);
-    event HarvestAnotherToken(address indexed user, uint256 indexed pid, uint256 amount);
+    event DepositAnotherToken(
+        address indexed user,
+        uint256 indexed pid,
+        uint256 amount,
+        address indexed to
+    );
+    event WithdrawAnotherToken(
+        address indexed user,
+        uint256 indexed pid,
+        uint256 amount,
+        address indexed to
+    );
+    event HarvestAnotherToken(
+        address indexed user,
+        uint256 indexed pid,
+        uint256 amount
+    );
     event LogUpdatePoolAnotherToken(
         uint256 indexed pid,
         uint256 lastRewardBlock,
@@ -867,12 +1001,19 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     );
 
     /* General Events */
-    event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event EmergencyWithdraw(
+        address indexed user,
+        uint256 indexed pid,
+        uint256 amount
+    );
 
     constructor(
         IERC721 _araFractalV2 // araFractalV2 ERC721 token
     ) {
-        require(address(_araFractalV2) != address(0), "invalid araFractalV2's address");
+        require(
+            address(_araFractalV2) != address(0),
+            "invalid araFractalV2's address"
+        );
         araFractalV2 = _araFractalV2;
     }
 
@@ -880,63 +1021,93 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     function depositToChef(uint256 _pid, uint256 _tokenId) external {
         // Check if msg.sender is the owner of the veARA
         address ownerOfTokenId = IERC721(araFractalV2).ownerOf(_tokenId);
-        require(ownerOfTokenId == msg.sender, "You are not the owner of this veARA");
+        require(
+            ownerOfTokenId == msg.sender,
+            "You are not the owner of this veARA"
+        );
 
         // AnotherToken Rewards attributes
-        PoolInfoAnotherToken memory poolAnotherToken = updatePoolAnotherToken(_pid);
-        UserInfoAnotherToken storage userAnotherToken = userInfoAnotherToken[_pid][msg.sender][_tokenId];
+        PoolInfoAnotherToken memory poolAnotherToken = updatePoolAnotherToken(
+            _pid
+        );
+        UserInfoAnotherToken storage userAnotherToken = userInfoAnotherToken[
+            _pid
+        ][msg.sender][_tokenId];
 
         totalNftsByUser[msg.sender] = totalNftsByUser[msg.sender] + 1;
         tokenIdsByUser[msg.sender].push(_tokenId);
 
         // Transfer the veARA token from the user to the contract
-        ve(address(araFractalV2)).transferFrom(msg.sender, address(this), _tokenId);
+        ve(address(araFractalV2)).transferFrom(
+            msg.sender,
+            address(this),
+            _tokenId
+        );
         uint256 amount = uint256(ve(address(araFractalV2)).locking(_tokenId));
 
         /******************** AnotherToken Rewards Code ********************/
         // AnotherToken Rewards Code
-            userAnotherToken.amount = userAnotherToken.amount + amount;
-            userAnotherToken.rewardDebt =
-                userAnotherToken.rewardDebt +
-                (amount * poolAnotherToken.accAnotherTokenPerShare) /
-                ACC_ANOTHERTOKEN_PRECISION;
+        userAnotherToken.amount = userAnotherToken.amount + amount;
+        userAnotherToken.rewardDebt =
+            userAnotherToken.rewardDebt +
+            (amount * poolAnotherToken.accAnotherTokenPerShare) /
+            ACC_ANOTHERTOKEN_PRECISION;
         /*******************************************************************/
 
         // Push the tokenInfo to the tokenInfo array
-        tokenInfo.push(TokenInfo({ user: msg.sender, numberNFT: _tokenId }));
+        tokenInfo.push(TokenInfo({user: msg.sender, numberNFT: _tokenId}));
 
         // Events
         // Emit events for deposit
         emit DepositAnotherToken(msg.sender, _pid, amount, msg.sender);
     }
 
-    function depositAnotherToken(uint256 _pid, uint256 _amount) external onlyOwner {
+    function depositAnotherToken(
+        uint256 _pid,
+        uint256 _amount
+    ) external onlyOwner {
         require(_pid < totalPidsAnotherToken, "invalid pool id");
-        PoolInfoAnotherToken storage poolAnotherToken = poolInfoAnotherToken[_pid];
-        IERC20(poolAnotherToken.tokenReward).transferFrom(msg.sender, address(this), _amount);
+        PoolInfoAnotherToken storage poolAnotherToken = poolInfoAnotherToken[
+            _pid
+        ];
+        IERC20(poolAnotherToken.tokenReward).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
     }
 
     function withdrawAndDistribute(uint256 _pid, uint256 _tokenId) external {
-
         // AnotherToken Rewards attributes
-        PoolInfoAnotherToken memory poolAnotherToken = updatePoolAnotherToken(_pid);
-        UserInfoAnotherToken storage userAnotherToken = userInfoAnotherToken[_pid][msg.sender][_tokenId];
+        PoolInfoAnotherToken memory poolAnotherToken = updatePoolAnotherToken(
+            _pid
+        );
+        UserInfoAnotherToken storage userAnotherToken = userInfoAnotherToken[
+            _pid
+        ][msg.sender][_tokenId];
 
         uint256 amount = uint256(ve(address(araFractalV2)).locking(_tokenId)); // amount of locked ARA on that veARA
 
         /******************** AnotherToken Rewards Code ********************/
-            uint256 accumulatedWAnotherToken = (userAnotherToken.amount * poolAnotherToken.accAnotherTokenPerShare) /
-                ACC_ANOTHERTOKEN_PRECISION;
-            // subtracting the rewards the user is not eligible for
-            uint256 eligibleAnotherToken = accumulatedWAnotherToken - userAnotherToken.rewardDebt;
-            userAnotherToken.amount = userAnotherToken.amount - amount; // put user amount of UserInfo a zero
-            userAnotherToken.rewardDebt =
-                (userAnotherToken.amount * poolAnotherToken.accAnotherTokenPerShare) /
-                ACC_ANOTHERTOKEN_PRECISION; // update AnotherToken Reward Debt
-            safeAnotherTokenTransfer(_pid, msg.sender, eligibleAnotherToken);
+        uint256 accumulatedWAnotherToken = (userAnotherToken.amount *
+            poolAnotherToken.accAnotherTokenPerShare) /
+            ACC_ANOTHERTOKEN_PRECISION;
+        // subtracting the rewards the user is not eligible for
+        uint256 eligibleAnotherToken = accumulatedWAnotherToken -
+            userAnotherToken.rewardDebt;
+        userAnotherToken.amount = userAnotherToken.amount - amount; // put user amount of UserInfo a zero
+        userAnotherToken.rewardDebt =
+            (userAnotherToken.amount *
+                poolAnotherToken.accAnotherTokenPerShare) /
+            ACC_ANOTHERTOKEN_PRECISION; // update AnotherToken Reward Debt
+        safeAnotherTokenTransfer(_pid, msg.sender, eligibleAnotherToken);
         /********************************************************************/
 
-        IERC721(araFractalV2).safeTransferFrom(address(this), msg.sender, _tokenId); // transfer veARA to his owner
+        IERC721(araFractalV2).safeTransferFrom(
+            address(this),
+            msg.sender,
+            _tokenId
+        ); // transfer veARA to his owner
 
         uint256[] storage tokenIdsByCaller = tokenIdsByUser[msg.sender];
         for (uint256 i = 0; i < tokenIdsByCaller.length; ) {
@@ -955,39 +1126,54 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         emit WithdrawAnotherToken(msg.sender, _pid, amount, msg.sender);
     }
 
-    function harvestAndDistributeAnotherToken(uint256 _pid, uint256 _tokenId) public {
+    function harvestAndDistributeAnotherToken(
+        uint256 _pid,
+        uint256 _tokenId
+    ) public {
         // Get the current pool information for the specified pid
-        PoolInfoAnotherToken memory poolAnotherToken = updatePoolAnotherToken(_pid);
+        PoolInfoAnotherToken memory poolAnotherToken = updatePoolAnotherToken(
+            _pid
+        );
         // Get the current user's information for the specified pid and tokenId
-        UserInfoAnotherToken storage userAnotherToken = userInfoAnotherToken[_pid][msg.sender][_tokenId];
+        UserInfoAnotherToken storage userAnotherToken = userInfoAnotherToken[
+            _pid
+        ][msg.sender][_tokenId];
 
-            // Calculate the total accumulated AnotherToken rewards for the user based on their LP token amount
-            uint256 accumulatedAnotherToken = (userAnotherToken.amount * poolAnotherToken.accAnotherTokenPerShare) /
-                ACC_ANOTHERTOKEN_PRECISION;
-            // Subtract any rewards the user is not eligible for
-            uint256 eligibleAnotherToken = accumulatedAnotherToken - userAnotherToken.rewardDebt;
+        // Calculate the total accumulated AnotherToken rewards for the user based on their LP token amount
+        uint256 accumulatedAnotherToken = (userAnotherToken.amount *
+            poolAnotherToken.accAnotherTokenPerShare) /
+            ACC_ANOTHERTOKEN_PRECISION;
+        // Subtract any rewards the user is not eligible for
+        uint256 eligibleAnotherToken = accumulatedAnotherToken -
+            userAnotherToken.rewardDebt;
 
-            // Update the user's reward debt to the current accumulated AnotherToken rewards
-            userAnotherToken.rewardDebt = accumulatedAnotherToken;
+        // Update the user's reward debt to the current accumulated AnotherToken rewards
+        userAnotherToken.rewardDebt = accumulatedAnotherToken;
 
-            // If there are any eligible AnotherToken rewards, transfer them to the user
-            if (eligibleAnotherToken > 0) {
-                safeAnotherTokenTransfer(_pid, msg.sender, eligibleAnotherToken);
-            }
+        // If there are any eligible AnotherToken rewards, transfer them to the user
+        if (eligibleAnotherToken > 0) {
+            safeAnotherTokenTransfer(_pid, msg.sender, eligibleAnotherToken);
+        }
 
-            // Emit an event to log the harvest
-            emit HarvestAnotherToken(msg.sender, _pid, eligibleAnotherToken);
+        // Emit an event to log the harvest
+        emit HarvestAnotherToken(msg.sender, _pid, eligibleAnotherToken);
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
     function emergencyWithdraw(uint256 _pid, uint256 _tokenId) public {
         // Get the current user's information for the specified pid and tokenId
-        UserInfoAnotherToken storage userAnotherToken = userInfoAnotherToken[_pid][msg.sender][_tokenId];
+        UserInfoAnotherToken storage userAnotherToken = userInfoAnotherToken[
+            _pid
+        ][msg.sender][_tokenId];
         // Get the current user's LP token amount
         userAnotherToken.amount = 0;
         userAnotherToken.rewardDebt = 0;
         // Transfer the user's LP token back to them using the IERC721 contract
-        IERC721(araFractalV2).safeTransferFrom(address(this), msg.sender, _tokenId);
+        IERC721(araFractalV2).safeTransferFrom(
+            address(this),
+            msg.sender,
+            _tokenId
+        );
 
         uint256[] storage tokenIdsByCaller = tokenIdsByUser[msg.sender];
         for (uint256 i = 0; i < tokenIdsByCaller.length; ) {
@@ -1023,7 +1209,11 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         totalPidsAnotherToken++;
         totalAnotherAllocPoint = totalAnotherAllocPoint + _allocPoint;
         // Emit an event to log the pool addition
-        emit LogPoolAnotherTokenAddition(totalPidsAnotherToken - 1, _tokenReward, _allocPoint);
+        emit LogPoolAnotherTokenAddition(
+            totalPidsAnotherToken - 1,
+            _tokenReward,
+            _allocPoint
+        );
     }
 
     // Update the given Another Token pool's. Can only be called by the owner.
@@ -1034,10 +1224,13 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256 _anotherTokenPerBlock
     ) public onlyOwner {
         // Update the allocation point, token reward, block reward and closed status of the specified AnotherToken pool
-        PoolInfoAnotherToken storage poolAnotherToken = poolInfoAnotherToken[_pid];
+        PoolInfoAnotherToken storage poolAnotherToken = poolInfoAnotherToken[
+            _pid
+        ];
         poolAnotherToken.allocPoint = _allocPoint;
         poolAnotherToken.tokenReward = _tokenReward;
         poolAnotherToken.anotherTokenPerBlock = _anotherTokenPerBlock;
+        totalAnotherAllocPoint = totalAnotherAllocPoint + _allocPoint;
         // Emit an event to log the pool update
         emit LogSetPoolAnotherToken(_pid, _tokenReward, _allocPoint);
     }
@@ -1048,27 +1241,40 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256 _tokenId,
         address _user
     ) external view returns (uint256 pending) {
-        PoolInfoAnotherToken storage poolAnotherToken = poolInfoAnotherToken[_pid];
-        UserInfoAnotherToken storage userAnotherToken = userInfoAnotherToken[_pid][_user][_tokenId];
+        PoolInfoAnotherToken storage poolAnotherToken = poolInfoAnotherToken[
+            _pid
+        ];
+        UserInfoAnotherToken storage userAnotherToken = userInfoAnotherToken[
+            _pid
+        ][_user][_tokenId];
         // Get the accumulated AnotherToken per LP token
-        uint256 accAnotherTokenPerShare = poolAnotherToken.accAnotherTokenPerShare;
+        uint256 accAnotherTokenPerShare = poolAnotherToken
+            .accAnotherTokenPerShare;
         // Calculate the pending AnotherToken rewards for the user based on their staked LP tokens and
         // subtracting any rewards they are not eligible for or have already claimed
-        uint256 anotherTokenSupply = IERC20(poolInfoAnotherToken[_pid].tokenReward).balanceOf(address(this));
+        uint256 anotherTokenSupply = IERC20(
+            poolInfoAnotherToken[_pid].tokenReward
+        ).balanceOf(address(this));
 
-        if (block.number > poolAnotherToken.lastRewardBlock && anotherTokenSupply > 0) {
-            uint256 blocksSinceLastReward = block.number - poolAnotherToken.lastRewardBlock;
+        if (
+            block.number > poolAnotherToken.lastRewardBlock &&
+            anotherTokenSupply > 0
+        ) {
+            uint256 blocksSinceLastReward = block.number -
+                poolAnotherToken.lastRewardBlock;
             // based on the pool weight (allocation points) we calculate the anotherToken rewarded for this specific pool
             uint256 anotherTokenRewards = (blocksSinceLastReward +
                 poolAnotherToken.anotherTokenPerBlock *
                 poolAnotherToken.allocPoint) / totalAnotherAllocPoint;
             // we take parts of the rewards for treasury, these can be subject to change, so we recalculate it a value of 1000 = 100%
-            uint256 anotherTokenRewardsForPool = (anotherTokenRewards * DENOMINATOR) / DENOMINATOR;
+            uint256 anotherTokenRewardsForPool = (anotherTokenRewards *
+                DENOMINATOR) / DENOMINATOR;
 
             // we calculate the new amount of accumulated anotherToken per veARA
             accAnotherTokenPerShare =
                 accAnotherTokenPerShare +
-                ((anotherTokenRewardsForPool * ACC_ANOTHERTOKEN_PRECISION) / anotherTokenSupply);
+                ((anotherTokenRewardsForPool * ACC_ANOTHERTOKEN_PRECISION) /
+                    anotherTokenSupply);
         }
         // Calculate the pending AnotherToken rewards for the user based on their staked LP tokens and subtracting any rewards they are not eligible for or have already claimed
         pending =
@@ -1078,29 +1284,35 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     }
 
     // Update reward variables of the given anotherToken pool to be up-to-date.
-    function updatePoolAnotherToken(uint256 _pid) public returns (PoolInfoAnotherToken memory poolAnotherToken) {
+    function updatePoolAnotherToken(
+        uint256 _pid
+    ) public returns (PoolInfoAnotherToken memory poolAnotherToken) {
         poolAnotherToken = poolInfoAnotherToken[_pid];
 
         if (block.number > poolAnotherToken.lastRewardBlock) {
             // total of AnotherTokens staked for this pool
-            uint256 anotherTokenSupply = IERC20(poolInfoAnotherToken[_pid].tokenReward).balanceOf(address(this));
+            uint256 anotherTokenSupply = IERC20(
+                poolInfoAnotherToken[_pid].tokenReward
+            ).balanceOf(address(this));
             if (anotherTokenSupply > 0) {
-                uint256 blocksSinceLastReward = block.number - poolAnotherToken.lastRewardBlock;
+                uint256 blocksSinceLastReward = block.number -
+                    poolAnotherToken.lastRewardBlock;
 
                 // rewards for this pool based on his allocation points
                 uint256 anotherTokenRewards = (blocksSinceLastReward *
                     poolAnotherToken.anotherTokenPerBlock *
                     poolAnotherToken.allocPoint) / totalAnotherAllocPoint;
 
-                uint256 anotherTokenRewardsForPool = (anotherTokenRewards * DENOMINATOR) / DENOMINATOR;
+                uint256 anotherTokenRewardsForPool = (anotherTokenRewards *
+                    DENOMINATOR) / DENOMINATOR;
 
                 poolAnotherToken.accAnotherTokenPerShare =
                     poolAnotherToken.accAnotherTokenPerShare +
-                    ((anotherTokenRewardsForPool * ACC_ANOTHERTOKEN_PRECISION) / anotherTokenSupply);
+                    ((anotherTokenRewardsForPool * ACC_ANOTHERTOKEN_PRECISION) /
+                        anotherTokenSupply);
             }
             poolAnotherToken.lastRewardBlock = block.number;
             poolInfoAnotherToken[_pid] = poolAnotherToken;
-
         }
     }
 
@@ -1113,13 +1325,15 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         // Get the specified anotherToken pool
         PoolInfoAnotherToken memory pool = poolInfoAnotherToken[_pid];
         // Check the balance of anotherToken in the pool
-        uint256 anotherTokenBalance = IERC20(pool.tokenReward).balanceOf(address(this));
+        uint256 anotherTokenBalance = IERC20(pool.tokenReward).balanceOf(
+            address(this)
+        );
         // If the requested amount is more than the balance, transfer the entire balance
         if (_amount > anotherTokenBalance) {
-            IERC20(pool.tokenReward).transfer(_to, anotherTokenBalance);
+            IERC20(pool.tokenReward).safeTransfer(_to, anotherTokenBalance);
         } else {
             // Otherwise, transfer the requested amount
-            IERC20(pool.tokenReward).transfer(_to, _amount);
+            IERC20(pool.tokenReward).safeTransfer(_to, _amount);
         }
     }
 }
