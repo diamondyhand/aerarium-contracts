@@ -1070,7 +1070,7 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         PoolInfoAnotherToken storage poolAnotherToken = poolInfoAnotherToken[
             _pid
         ];
-        IERC20(poolAnotherToken.tokenReward).transferFrom(
+        IERC20(poolAnotherToken.tokenReward).safeTransferFrom(
             msg.sender,
             address(this),
             _amount
@@ -1330,10 +1330,10 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         );
         // If the requested amount is more than the balance, transfer the entire balance
         if (_amount > anotherTokenBalance) {
-            IERC20(pool.tokenReward).transfer(_to, anotherTokenBalance);
+            IERC20(pool.tokenReward).safeTransfer(_to, anotherTokenBalance);
         } else {
             // Otherwise, transfer the requested amount
-            IERC20(pool.tokenReward).transfer(_to, _amount);
+            IERC20(pool.tokenReward).safeTransfer(_to, _amount);
         }
     }
 }
