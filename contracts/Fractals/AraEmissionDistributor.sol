@@ -1112,7 +1112,12 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256[] storage tokenIdsByCaller = tokenIdsByUser[msg.sender];
         for (uint256 i = 0; i < tokenIdsByCaller.length; ) {
             if (tokenIdsByCaller[i] == _tokenId) {
-                delete tokenIdsByCaller[i];
+                // Swap the element to remove with the last element
+                tokenIdsByCaller[i] = tokenIdsByCaller[
+                    tokenIdsByCaller.length - 1
+                ];
+                // Pop the last element from the array
+                tokenIdsByCaller.pop();
                 break;
             }
             unchecked {
@@ -1178,7 +1183,12 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256[] storage tokenIdsByCaller = tokenIdsByUser[msg.sender];
         for (uint256 i = 0; i < tokenIdsByCaller.length; ) {
             if (tokenIdsByCaller[i] == _tokenId) {
-                delete tokenIdsByCaller[i];
+                // Swap the element to remove with the last element
+                tokenIdsByCaller[i] = tokenIdsByCaller[
+                    tokenIdsByCaller.length - 1
+                ];
+                // Pop the last element from the array
+                tokenIdsByCaller.pop();
                 break;
             }
             unchecked {
