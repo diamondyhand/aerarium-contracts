@@ -959,7 +959,7 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     mapping(address => uint256) public totalNftsByUser;
 
     uint256 private constant ACC_ANOTHERTOKEN_PRECISION = 1e12; // precision used for calculations involving another token
-    uint256 public constant POOL_PERCENTAGE = 0.876e3; // Percentage of ARA allocated to pools
+    // uint256 public constant POOL_PERCENTAGE = 0.876e3; // Percentage of ARA allocated to pools
 
     uint256 public constant DENOMINATOR = 1e3; // Constant denominator for calculating allocation points
 

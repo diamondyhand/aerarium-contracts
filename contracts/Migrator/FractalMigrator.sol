@@ -64,13 +64,11 @@ contract TokenSwap {
     IERC721 public oldToken;
     IERC721 public newToken;
     address public owner;
-    uint256 _tokenIdGeneral;
 
     constructor(address _oldTokenAddress, address _newTokenAddress) {
         oldToken = IERC721(_oldTokenAddress);
         newToken = IERC721(_newTokenAddress);
         owner = msg.sender;
-        _tokenIdGeneral = 0;
     }
 
     function balance(uint256 _tokenId) public view returns (bool) {

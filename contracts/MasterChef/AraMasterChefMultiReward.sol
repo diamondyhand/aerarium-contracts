@@ -1277,8 +1277,6 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         mapping(address => uint256) accRewardPerShare; // Accumulated rewards per share, times 1e12, for each token.
         uint16 depositFeeBP; // Deposit fee in basis points
     }
-    // Dev address.
-    address public devaddr;
     // Bonus muliplier for early ara makers.
     uint256 public BONUS_MULTIPLIER = 1;
     // Deposit Fee address
