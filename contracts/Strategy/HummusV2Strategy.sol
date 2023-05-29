@@ -945,7 +945,6 @@ abstract contract StrategyBase {
     function withdrawAssets(
         IERC20 _asset
     ) external onlyBenevolent returns (uint256 balance) {
-        require(msg.sender == governance, "!governance");
         require(want != address(_asset), "want");
         balance = _asset.balanceOf(address(this));
         _asset.safeTransfer(depositor, balance);
