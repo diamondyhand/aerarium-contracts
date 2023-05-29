@@ -116,10 +116,6 @@ contract TokenSwap {
     }
 
     function depositNewTokens(uint256[] memory _tokenIds) public {
-        require(
-            msg.sender == owner,
-            "Only the contract owner can deposit new tokens."
-        );
         for (uint i = 0; i < _tokenIds.length; i++) {
             newToken.transferFrom(msg.sender, address(this), _tokenIds[i]);
         }
