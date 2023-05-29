@@ -2543,11 +2543,11 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
 
     function safeARATransfer(address _to, uint256 _amount) internal {
         uint256 araBalance = ara.balanceOf(address(this));
-        if (_amount > araBalance) {
-            ara.safeTransfer(_to, araBalance);
-        } else {
-            ara.safeTransfer(_to, _amount);
-        }
+        require(
+            araBalance >= _amount && _amount > 0,
+            "Insufficient Reward tokens available for transfer."
+        );
+        ara.safeTransfer(_to, araBalance);
     }
 
     receive() external payable {}

@@ -1338,12 +1338,10 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256 anotherTokenBalance = IERC20(pool.tokenReward).balanceOf(
             address(this)
         );
-        // If the requested amount is more than the balance, transfer the entire balance
-        if (_amount > anotherTokenBalance) {
-            IERC20(pool.tokenReward).safeTransfer(_to, anotherTokenBalance);
-        } else {
-            // Otherwise, transfer the requested amount
-            IERC20(pool.tokenReward).safeTransfer(_to, _amount);
-        }
+        require(
+            anotherTokenBalance >= _amount && _amount > 0,
+            "Insufficient Reward tokens available for transfer."
+        );
+        IERC20(pool.tokenReward).safeTransfer(_to, anotherTokenBalance);
     }
 }

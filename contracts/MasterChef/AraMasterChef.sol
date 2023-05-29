@@ -1572,13 +1572,11 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     // Safe ara transfer function, just in case if rounding error causes pool to not have enough ARAs.
     function safeAraTransfer(address _to, uint256 _amount) internal {
         uint256 araBal = ara.balanceOf(address(this));
-        bool transferSuccess = false;
-        if (_amount > araBal) {
-            transferSuccess = ara.safeTransfer(_to, araBal);
-        } else {
-            transferSuccess = ara.safeTransfer(_to, _amount);
-        }
-        require(transferSuccess, "safeAraTransfer: transfer failed");
+        require(
+            araBal >= _amount && _amount > 0,
+            "Insufficient Reward tokens available for transfer."
+        );
+        ara.safeTransfer(_to, araBal);
     }
 
     // Update dev address by the previous dev.

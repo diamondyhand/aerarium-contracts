@@ -1661,11 +1661,11 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         uint256 _amount
     ) internal {
         uint256 rewardBal = IERC20(_rewardToken).balanceOf(address(this));
-        if (_amount > rewardBal) {
-            IERC20(_rewardToken).transfer(_to, rewardBal);
-        } else {
-            IERC20(_rewardToken).transfer(_to, _amount);
-        }
+        require(
+            rewardBal >= _amount && _amount > 0,
+            "Insufficient Reward tokens available for transfer."
+        );
+        IERC20(_rewardToken).safeTransfer(_to, rewardBal);
     }
 
     function setFeeAddress(address _feeAddress) public {
