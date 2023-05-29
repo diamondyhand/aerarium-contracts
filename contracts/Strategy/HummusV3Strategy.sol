@@ -941,7 +941,7 @@ abstract contract StrategyBase {
     function deposit() public virtual;
 
     // Controller only function for creating additional rewards from dust
-    function withdraw(
+    function withdrawAssets(
         IERC20 _asset
     ) external onlyBenevolent returns (uint256 balance) {
         require(msg.sender == governance, "!governance");
@@ -951,7 +951,7 @@ abstract contract StrategyBase {
     }
 
     // Withdraw partial funds
-    function withdraw(uint256 _amount) external returns (uint256) {
+    function withdrawTokens(uint256 _amount) external returns (uint256) {
         require(msg.sender == depositor, "!depositor");
         uint256 _balance = IERC20(want).balanceOf(address(this));
         if (_balance < _amount) {
