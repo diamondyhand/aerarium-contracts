@@ -39,7 +39,10 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(address recipient, uint256 amount) external returns (bool);
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -48,7 +51,10 @@ interface IERC20 {
      *
      * This value changes when {approve} or {transferFrom} are called.
      */
-    function allowance(address owner, address spender) external view returns (uint256);
+    function allowance(
+        address owner,
+        address spender
+    ) external view returns (uint256);
 
     /**
      * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
@@ -93,7 +99,11 @@ interface IERC20 {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 }
 
 /**
@@ -146,10 +156,16 @@ library Address {
      * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "Address: insufficient balance");
+        require(
+            address(this).balance >= amount,
+            "Address: insufficient balance"
+        );
 
         (bool success, ) = recipient.call{value: amount}("");
-        require(success, "Address: unable to send value, recipient may have reverted");
+        require(
+            success,
+            "Address: unable to send value, recipient may have reverted"
+        );
     }
 
     /**
@@ -170,7 +186,10 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
+    function functionCall(
+        address target,
+        bytes memory data
+    ) internal returns (bytes memory) {
         return functionCall(target, data, "Address: low-level call failed");
     }
 
@@ -204,7 +223,13 @@ library Address {
         bytes memory data,
         uint256 value
     ) internal returns (bytes memory) {
-        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
+        return
+            functionCallWithValue(
+                target,
+                data,
+                value,
+                "Address: low-level call with value failed"
+            );
     }
 
     /**
@@ -219,10 +244,15 @@ library Address {
         uint256 value,
         string memory errorMessage
     ) internal returns (bytes memory) {
-        require(address(this).balance >= value, "Address: insufficient balance for call");
+        require(
+            address(this).balance >= value,
+            "Address: insufficient balance for call"
+        );
         require(isContract(target), "Address: call to non-contract");
 
-        (bool success, bytes memory returndata) = target.call{value: value}(data);
+        (bool success, bytes memory returndata) = target.call{value: value}(
+            data
+        );
         return verifyCallResult(success, returndata, errorMessage);
     }
 
@@ -232,8 +262,16 @@ library Address {
      *
      * _Available since v3.3._
      */
-    function functionStaticCall(address target, bytes memory data) internal view returns (bytes memory) {
-        return functionStaticCall(target, data, "Address: low-level static call failed");
+    function functionStaticCall(
+        address target,
+        bytes memory data
+    ) internal view returns (bytes memory) {
+        return
+            functionStaticCall(
+                target,
+                data,
+                "Address: low-level static call failed"
+            );
     }
 
     /**
@@ -259,8 +297,16 @@ library Address {
      *
      * _Available since v3.4._
      */
-    function functionDelegateCall(address target, bytes memory data) internal returns (bytes memory) {
-        return functionDelegateCall(target, data, "Address: low-level delegate call failed");
+    function functionDelegateCall(
+        address target,
+        bytes memory data
+    ) internal returns (bytes memory) {
+        return
+            functionDelegateCall(
+                target,
+                data,
+                "Address: low-level delegate call failed"
+            );
     }
 
     /**
@@ -321,10 +367,9 @@ interface IPriceOracle {
         INVARIANT
     }
 
-    function getTimeWeightedAverage(OracleAverageQuery[] memory queries)
-        external
-        view
-        returns (uint256[] memory results);
+    function getTimeWeightedAverage(
+        OracleAverageQuery[] memory queries
+    ) external view returns (uint256[] memory results);
 }
 
 interface IVault {
@@ -368,9 +413,13 @@ interface IVault {
         bool fromInternalBalance;
     }
 
-    function getPool(bytes32 poolId) external view returns (address, PoolSpecialization);
+    function getPool(
+        bytes32 poolId
+    ) external view returns (address, PoolSpecialization);
 
-    function getPoolTokens(bytes32 poolId)
+    function getPoolTokens(
+        bytes32 poolId
+    )
         external
         view
         returns (
@@ -425,15 +474,20 @@ interface IAraLocker {
 
     function epochCount() external view returns (uint256);
 
-    function balanceAtEpochOf(uint256 _epoch, address _user) external view returns (uint256 amount);
+    function balanceAtEpochOf(
+        uint256 _epoch,
+        address _user
+    ) external view returns (uint256 amount);
 
-    function totalSupplyAtEpoch(uint256 _epoch) external view returns (uint256 supply);
+    function totalSupplyAtEpoch(
+        uint256 _epoch
+    ) external view returns (uint256 supply);
 
     function queueNewRewards(address _rewardsToken, uint256 reward) external;
 
-    function getReward(address _account, bool _stake) external;
-
     function getReward(address _account) external;
+
+    function getRewardWithSpecific(address _account, bool[] _skipIds) external;
 }
 
 interface IExtraRewardsDistributor {
@@ -443,12 +497,7 @@ interface IExtraRewardsDistributor {
 interface ICrvDepositorWrapper {
     function getMinOut(uint256, uint256) external view returns (uint256);
 
-    function deposit(
-        uint256,
-        uint256,
-        bool,
-        address _stakeAddress
-    ) external;
+    function deposit(uint256, uint256, bool, address _stakeAddress) external;
 }
 
 /// @notice A library for performing overflow-/underflow-safe math,
@@ -608,12 +657,11 @@ abstract contract ReentrancyGuard {
 library SafeERC20 {
     using Address for address;
 
-    function safeTransfer(
-        IERC20 token,
-        address to,
-        uint256 value
-    ) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    function safeTransfer(IERC20 token, address to, uint256 value) internal {
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transfer.selector, to, value)
+        );
     }
 
     function safeTransferFrom(
@@ -622,7 +670,10 @@ library SafeERC20 {
         address to,
         uint256 value
     ) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transferFrom.selector, from, to, value)
+        );
     }
 
     /**
@@ -644,7 +695,10 @@ library SafeERC20 {
             (value == 0) || (token.allowance(address(this), spender) == 0),
             "SafeERC20: approve from non-zero to non-zero allowance"
         );
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.approve.selector, spender, value)
+        );
     }
 
     function safeIncreaseAllowance(
@@ -653,7 +707,14 @@ library SafeERC20 {
         uint256 value
     ) internal {
         uint256 newAllowance = token.allowance(address(this), spender) + value;
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(
+                token.approve.selector,
+                spender,
+                newAllowance
+            )
+        );
     }
 
     function safeDecreaseAllowance(
@@ -663,9 +724,19 @@ library SafeERC20 {
     ) internal {
         unchecked {
             uint256 oldAllowance = token.allowance(address(this), spender);
-            require(oldAllowance >= value, "SafeERC20: decreased allowance below zero");
+            require(
+                oldAllowance >= value,
+                "SafeERC20: decreased allowance below zero"
+            );
             uint256 newAllowance = oldAllowance - value;
-            _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+            _callOptionalReturn(
+                token,
+                abi.encodeWithSelector(
+                    token.approve.selector,
+                    spender,
+                    newAllowance
+                )
+            );
         }
     }
 
@@ -680,10 +751,16 @@ library SafeERC20 {
         // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
         // the target address contains contract code and also asserts for success in the low-level call.
 
-        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
+        bytes memory returndata = address(token).functionCall(
+            data,
+            "SafeERC20: low-level call failed"
+        );
         if (returndata.length > 0) {
             // Return data is optional
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+            require(
+                abi.decode(returndata, (bool)),
+                "SafeERC20: ERC20 operation did not succeed"
+            );
         }
     }
 }
@@ -703,7 +780,10 @@ library SafeERC20 {
 abstract contract Ownable is Context {
     address private _owner;
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
@@ -743,7 +823,10 @@ abstract contract Ownable is Context {
      * Can only be called by the current owner.
      */
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        require(
+            newOwner != address(0),
+            "Ownable: new owner is the zero address"
+        );
         _transferOwnership(newOwner);
     }
 
@@ -864,14 +947,30 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
 
     /* ========== EVENTS ========== */
 
-    event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
+    event DelegateChanged(
+        address indexed delegator,
+        address indexed fromDelegate,
+        address indexed toDelegate
+    );
     event DelegateCheckpointed(address indexed delegate);
 
     event Recovered(address _token, uint256 _amount);
-    event RewardPaid(address indexed _user, address indexed _rewardsToken, uint256 _reward);
-    event Staked(address indexed _user, uint256 _paidAmount, uint256 _lockedAmount);
+    event RewardPaid(
+        address indexed _user,
+        address indexed _rewardsToken,
+        uint256 _reward
+    );
+    event Staked(
+        address indexed _user,
+        uint256 _paidAmount,
+        uint256 _lockedAmount
+    );
     event Withdrawn(address indexed _user, uint256 _amount, bool _relocked);
-    event KickReward(address indexed _user, address indexed _kicked, uint256 _reward);
+    event KickReward(
+        address indexed _user,
+        address indexed _kicked,
+        uint256 _reward
+    );
     event RewardAdded(address indexed _token, uint256 _reward);
 
     event BlacklistModified(address account, bool blacklisted);
@@ -891,15 +990,17 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         string memory _nameArg,
         string memory _symbolArg,
         address _stakingToken
-        ) Ownable() {
+    ) Ownable() {
         _name = _nameArg;
         _symbol = _symbolArg;
         _decimals = 18;
 
         stakingToken = IERC20(_stakingToken);
 
-        uint256 currentEpoch = block.timestamp.div(rewardsDuration).mul(rewardsDuration);
-        epochs.push(Epoch({ supply: 0, date: uint32(currentEpoch) }));
+        uint256 currentEpoch = block.timestamp.div(rewardsDuration).mul(
+            rewardsDuration
+        );
+        epochs.push(Epoch({supply: 0, date: uint32(currentEpoch)}));
     }
 
     /***************************************
@@ -913,12 +1014,16 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
             for (uint256 i = 0; i < rewardTokensLength; i++) {
                 address token = rewardTokens[i];
                 uint256 newRewardPerToken = _rewardPerToken(token);
-                rewardData[token].rewardPerTokenStored = newRewardPerToken.to96();
-                rewardData[token].lastUpdateTime = _lastTimeRewardApplicable(rewardData[token].periodFinish).to32();
+                rewardData[token].rewardPerTokenStored = newRewardPerToken
+                    .to96();
+                rewardData[token].lastUpdateTime = _lastTimeRewardApplicable(
+                    rewardData[token].periodFinish
+                ).to32();
                 if (_account != address(0)) {
                     userData[_account][token] = UserData({
                         rewardPerTokenPaid: newRewardPerToken.to128(),
-                        rewards: _earned(_account, token, userBalance.locked).to128()
+                        rewards: _earned(_account, token, userBalance.locked)
+                            .to128()
                     });
                 }
             }
@@ -940,7 +1045,10 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
                     ADMIN
     ****************************************/
 
-    function modifyBlacklist(address _account, bool _blacklisted) external onlyOwner {
+    function modifyBlacklist(
+        address _account,
+        bool _blacklisted
+    ) external onlyOwner {
         uint256 cs;
         // solhint-disable-next-line no-inline-assembly
         assembly {
@@ -954,7 +1062,10 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
 
     // Add a new reward token to be distributed to stakers
     function addReward(address _rewardsToken) external onlyOwner {
-        require(rewardData[_rewardsToken].lastUpdateTime == 0, "Reward already exists");
+        require(
+            rewardData[_rewardsToken].lastUpdateTime == 0,
+            "Reward already exists"
+        );
         require(rewardTokens.length < 5, "Max rewards length");
 
         rewardTokens.push(_rewardsToken);
@@ -963,7 +1074,10 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
     }
 
     //set kick incentive
-    function setKickIncentive(uint256 _rate, uint256 _delay) external onlyOwner {
+    function setKickIncentive(
+        uint256 _rate,
+        uint256 _delay
+    ) external onlyOwner {
         require(_rate <= 500, "over max rate"); //max 5% per epoch
         require(_delay >= 2, "min delay"); //minimum 2 epochs of grace
         kickRewardPerEpoch = _rate;
@@ -979,9 +1093,18 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
     }
 
     // Added to support recovering LP Rewards from other systems such as BAL to be distributed to holders
-    function recoverERC20(address _tokenAddress, uint256 _tokenAmount) external onlyOwner {
-        require(_tokenAddress != address(stakingToken), "Cannot withdraw staking token");
-        require(rewardData[_tokenAddress].lastUpdateTime == 0, "Cannot withdraw reward token");
+    function recoverERC20(
+        address _tokenAddress,
+        uint256 _tokenAmount
+    ) external onlyOwner {
+        require(
+            _tokenAddress != address(stakingToken),
+            "Cannot withdraw staking token"
+        );
+        require(
+            rewardData[_tokenAddress].lastUpdateTime == 0,
+            "Cannot withdraw reward token"
+        );
         IERC20(_tokenAddress).safeTransfer(owner(), _tokenAmount);
         emit Recovered(_tokenAddress, _tokenAmount);
     }
@@ -991,7 +1114,10 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
     ****************************************/
 
     // Locked tokens cannot be withdrawn for lockDuration and are eligible to receive stakingReward rewards
-    function lock(address _account, uint256 _amount) external nonReentrant updateReward(_account) {
+    function lock(
+        address _account,
+        uint256 _amount
+    ) external nonReentrant updateReward(_account) {
         //pull tokens
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
 
@@ -1000,7 +1126,10 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
     }
 
     //lock tokens
-    function _lock(address _account, uint256 _amount) internal notBlacklisted(msg.sender, _account) {
+    function _lock(
+        address _account,
+        uint256 _amount
+    ) internal notBlacklisted(msg.sender, _account) {
         require(_amount > 0, "Cannot stake 0");
         require(!isShutdown, "shutdown");
 
@@ -1017,11 +1146,18 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         lockedSupply = lockedSupply.add(_amount);
 
         //add user lock records or add to current
-        uint256 currentEpoch = block.timestamp.div(rewardsDuration).mul(rewardsDuration);
+        uint256 currentEpoch = block.timestamp.div(rewardsDuration).mul(
+            rewardsDuration
+        );
         uint256 unlockTime = currentEpoch.add(lockDuration);
         uint256 idx = userLocks[_account].length;
         if (idx == 0 || userLocks[_account][idx - 1].unlockTime < unlockTime) {
-            userLocks[_account].push(LockedBalance({ amount: lockAmount, unlockTime: uint32(unlockTime) }));
+            userLocks[_account].push(
+                LockedBalance({
+                    amount: lockAmount,
+                    unlockTime: uint32(unlockTime)
+                })
+            );
         } else {
             LockedBalance storage userL = userLocks[_account][idx - 1];
             userL.amount = userL.amount.add(lockAmount);
@@ -1040,13 +1176,10 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         emit Staked(_account, lockAmount, lockAmount);
     }
 
-    // claim all pending rewards
-    function getReward(address _account) external {
-        getReward(_account, false);
-    }
-
     // Claim all pending rewards
-    function getReward(address _account, bool _stake) public nonReentrant updateReward(_account) {
+    function getReward(
+        address _account
+    ) external nonReentrant updateReward(_account) {
         uint256 rewardTokensLength = rewardTokens.length;
         for (uint256 i; i < rewardTokensLength; i++) {
             address _rewardsToken = rewardTokens[i];
@@ -1059,7 +1192,10 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         }
     }
 
-    function getReward(address _account, bool[] calldata _skipIdx) external nonReentrant updateReward(_account) {
+    function getRewardWithSpecific(
+        address _account,
+        bool[] calldata _skipIdx
+    ) external nonReentrant updateReward(_account) {
         uint256 rewardTokensLength = rewardTokens.length;
         require(_skipIdx.length == rewardTokensLength, "!arr");
         for (uint256 i; i < rewardTokensLength; i++) {
@@ -1080,7 +1216,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
 
     //insert a new epoch if needed. fill in any gaps
     function _checkpointEpoch() internal {
-        uint256 currentEpoch = block.timestamp.div(rewardsDuration).mul(rewardsDuration);
+        uint256 currentEpoch = block.timestamp.div(rewardsDuration).mul(
+            rewardsDuration
+        );
 
         //first epoch add in constructor, no need to check 0 length
         //check to add
@@ -1088,7 +1226,7 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         if (nextEpochDate < currentEpoch) {
             while (nextEpochDate != currentEpoch) {
                 nextEpochDate = nextEpochDate.add(rewardsDuration);
-                epochs.push(Epoch({ supply: 0, date: uint32(nextEpochDate) }));
+                epochs.push(Epoch({supply: 0, date: uint32(nextEpochDate)}));
             }
         }
     }
@@ -1100,7 +1238,12 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
 
     function kickExpiredLocks(address _account) external nonReentrant {
         //allow kick after grace period of 'kickRewardEpochDelay'
-        _processExpiredLocks(_account, false, msg.sender, rewardsDuration.mul(kickRewardEpochDelay));
+        _processExpiredLocks(
+            _account,
+            false,
+            msg.sender,
+            rewardsDuration.mul(kickRewardEpochDelay)
+        );
     }
 
     // Withdraw without checkpointing or accruing any rewards, providing system is shutdown
@@ -1153,9 +1296,18 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
             //but this section is supposed to be for quick and easy low gas processing of all locks
             //we'll assume that if the reward was good enough someone would have processed at an earlier epoch
             if (_checkDelay > 0) {
-                uint256 currentEpoch = block.timestamp.sub(_checkDelay).div(rewardsDuration).mul(rewardsDuration);
-                uint256 epochsover = currentEpoch.sub(uint256(locks[length - 1].unlockTime)).div(rewardsDuration);
-                uint256 rRate = AraMath.min(kickRewardPerEpoch.mul(epochsover + 1), denominator);
+                uint256 currentEpoch = block
+                    .timestamp
+                    .sub(_checkDelay)
+                    .div(rewardsDuration)
+                    .mul(rewardsDuration);
+                uint256 epochsover = currentEpoch
+                    .sub(uint256(locks[length - 1].unlockTime))
+                    .div(rewardsDuration);
+                uint256 rRate = AraMath.min(
+                    kickRewardPerEpoch.mul(epochsover + 1),
+                    denominator
+                );
                 reward = uint256(locked).mul(rRate).div(denominator);
             }
         } else {
@@ -1172,10 +1324,21 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
                 //check for kick reward
                 //each epoch over due increases reward
                 if (_checkDelay > 0) {
-                    uint256 currentEpoch = block.timestamp.sub(_checkDelay).div(rewardsDuration).mul(rewardsDuration);
-                    uint256 epochsover = currentEpoch.sub(uint256(locks[i].unlockTime)).div(rewardsDuration);
-                    uint256 rRate = AraMath.min(kickRewardPerEpoch.mul(epochsover + 1), denominator);
-                    reward = reward.add(uint256(locks[i].amount).mul(rRate).div(denominator));
+                    uint256 currentEpoch = block
+                        .timestamp
+                        .sub(_checkDelay)
+                        .div(rewardsDuration)
+                        .mul(rewardsDuration);
+                    uint256 epochsover = currentEpoch
+                        .sub(uint256(locks[i].unlockTime))
+                        .div(rewardsDuration);
+                    uint256 rRate = AraMath.min(
+                        kickRewardPerEpoch.mul(epochsover + 1),
+                        denominator
+                    );
+                    reward = reward.add(
+                        uint256(locks[i].amount).mul(rRate).div(denominator)
+                    );
                 }
                 //set next unlock index
                 nextUnlockIndex++;
@@ -1235,7 +1398,11 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
 
         // Step 3: Move balances around
         //         Delegate for the upcoming epoch
-        uint256 upcomingEpoch = block.timestamp.add(rewardsDuration).div(rewardsDuration).mul(rewardsDuration);
+        uint256 upcomingEpoch = block
+            .timestamp
+            .add(rewardsDuration)
+            .div(rewardsDuration)
+            .mul(rewardsDuration);
         uint256 i = len - 1;
         uint256 futureUnlocksSum = 0;
         LockedBalance memory currentLock = locks[i];
@@ -1244,9 +1411,13 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
             futureUnlocksSum += currentLock.amount;
 
             if (oldDelegatee != address(0)) {
-                delegateeUnlocks[oldDelegatee][currentLock.unlockTime] -= currentLock.amount;
+                delegateeUnlocks[oldDelegatee][
+                    currentLock.unlockTime
+                ] -= currentLock.amount;
             }
-            delegateeUnlocks[newDelegatee][currentLock.unlockTime] += currentLock.amount;
+            delegateeUnlocks[newDelegatee][
+                currentLock.unlockTime
+            ] += currentLock.amount;
 
             if (i > 0) {
                 i--;
@@ -1270,14 +1441,20 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
     ) internal {
         // This would only skip on first checkpointing
         if (_account != address(0)) {
-            uint256 upcomingEpoch = block.timestamp.add(rewardsDuration).div(rewardsDuration).mul(rewardsDuration);
+            uint256 upcomingEpoch = block
+                .timestamp
+                .add(rewardsDuration)
+                .div(rewardsDuration)
+                .mul(rewardsDuration);
             DelegateeCheckpoint[] storage ckpts = _checkpointedVotes[_account];
             if (ckpts.length > 0) {
                 DelegateeCheckpoint memory prevCkpt = ckpts[ckpts.length - 1];
                 // If there has already been a record for the upcoming epoch, no need to deduct the unlocks
                 if (prevCkpt.epochStart == upcomingEpoch) {
                     ckpts[ckpts.length - 1] = DelegateeCheckpoint({
-                        votes: (prevCkpt.votes + _upcomingAddition - _upcomingDeduction).to224(),
+                        votes: (prevCkpt.votes +
+                            _upcomingAddition -
+                            _upcomingDeduction).to224(),
                         epochStart: upcomingEpoch.to32()
                     });
                 }
@@ -1286,7 +1463,8 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
                 else if (prevCkpt.epochStart + lockDuration <= upcomingEpoch) {
                     ckpts.push(
                         DelegateeCheckpoint({
-                            votes: (_upcomingAddition - _upcomingDeduction).to224(),
+                            votes: (_upcomingAddition - _upcomingDeduction)
+                                .to224(),
                             epochStart: upcomingEpoch.to32()
                         })
                     );
@@ -1295,13 +1473,17 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
                     uint256 unlocksSinceLatestCkpt = 0;
                     // Should be maximum 18 iterations
                     while (nextEpoch > prevCkpt.epochStart) {
-                        unlocksSinceLatestCkpt += delegateeUnlocks[_account][nextEpoch];
+                        unlocksSinceLatestCkpt += delegateeUnlocks[_account][
+                            nextEpoch
+                        ];
                         nextEpoch -= rewardsDuration;
                     }
                     ckpts.push(
                         DelegateeCheckpoint({
-                            votes: (prevCkpt.votes - unlocksSinceLatestCkpt + _upcomingAddition - _upcomingDeduction)
-                                .to224(),
+                            votes: (prevCkpt.votes -
+                                unlocksSinceLatestCkpt +
+                                _upcomingAddition -
+                                _upcomingDeduction).to224(),
                             epochStart: upcomingEpoch.to32()
                         })
                     );
@@ -1335,24 +1517,38 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
     /**
      * @dev Get the `pos`-th checkpoint for `account`.
      */
-    function checkpoints(address account, uint32 pos) external view virtual returns (DelegateeCheckpoint memory) {
+    function checkpoints(
+        address account,
+        uint32 pos
+    ) external view virtual returns (DelegateeCheckpoint memory) {
         return _checkpointedVotes[account][pos];
     }
 
     /**
      * @dev Get number of checkpoints for `account`.
      */
-    function numCheckpoints(address account) external view virtual returns (uint32) {
+    function numCheckpoints(
+        address account
+    ) external view virtual returns (uint32) {
         return _checkpointedVotes[account].length.to32();
     }
 
     /**
      * @dev Retrieve the number of votes for `account` at the end of `blockNumber`.
      */
-    function getPastVotes(address account, uint256 timestamp) public view returns (uint256 votes) {
-        require(timestamp <= block.timestamp, "ERC20Votes: block not yet mined");
+    function getPastVotes(
+        address account,
+        uint256 timestamp
+    ) public view returns (uint256 votes) {
+        require(
+            timestamp <= block.timestamp,
+            "ERC20Votes: block not yet mined"
+        );
         uint256 epoch = timestamp.div(rewardsDuration).mul(rewardsDuration);
-        DelegateeCheckpoint memory ckpt = _checkpointsLookup(_checkpointedVotes[account], epoch);
+        DelegateeCheckpoint memory ckpt = _checkpointsLookup(
+            _checkpointedVotes[account],
+            epoch
+        );
         votes = ckpt.votes;
         if (votes == 0 || ckpt.epochStart + lockDuration <= epoch) {
             return 0;
@@ -1367,7 +1563,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
      * @dev Retrieve the `totalSupply` at the end of `timestamp`. Note, this value is the sum of all balances.
      * It is but NOT the sum of all the delegated votes!
      */
-    function getPastTotalSupply(uint256 timestamp) external view returns (uint256) {
+    function getPastTotalSupply(
+        uint256 timestamp
+    ) external view returns (uint256) {
         require(timestamp < block.timestamp, "ERC20Votes: block not yet mined");
         return totalSupplyAtEpoch(findEpochId(timestamp));
     }
@@ -1376,11 +1574,10 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
      * @dev Lookup a value in a list of (sorted) checkpoints.
      *      Copied from oz/ERC20Votes.sol
      */
-    function _checkpointsLookup(DelegateeCheckpoint[] storage ckpts, uint256 epochStart)
-        private
-        view
-        returns (DelegateeCheckpoint memory)
-    {
+    function _checkpointsLookup(
+        DelegateeCheckpoint[] storage ckpts,
+        uint256 epochStart
+    ) private view returns (DelegateeCheckpoint memory) {
         uint256 high = ckpts.length;
         uint256 low = 0;
         while (low < high) {
@@ -1405,8 +1602,13 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
     }
 
     // Balance of an account which only includes properly locked tokens at the given epoch
-    function balanceAtEpochOf(uint256 _epoch, address _user) public view returns (uint256 amount) {
-        uint256 epochStart = uint256(epochs[0].date).add(uint256(_epoch).mul(rewardsDuration));
+    function balanceAtEpochOf(
+        uint256 _epoch,
+        address _user
+    ) public view returns (uint256 amount) {
+        uint256 epochStart = uint256(epochs[0].date).add(
+            uint256(_epoch).mul(rewardsDuration)
+        );
         require(epochStart < block.timestamp, "Epoch is in the future");
 
         uint256 cutoffEpoch = epochStart.sub(lockDuration);
@@ -1417,7 +1619,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         //traverse inversely to make more current queries more gas efficient
         uint256 locksLength = locks.length;
         for (uint256 i = locksLength; i > 0; i--) {
-            uint256 lockEpoch = uint256(locks[i - 1].unlockTime).sub(lockDuration);
+            uint256 lockEpoch = uint256(locks[i - 1].unlockTime).sub(
+                lockDuration
+            );
             //lock epoch must be less or equal to the epoch we're basing from.
             //also not include the current epoch
             if (lockEpoch < epochStart) {
@@ -1434,7 +1638,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
     }
 
     // Information on a user's locked balances
-    function lockedBalances(address _user)
+    function lockedBalances(
+        address _user
+    )
         external
         view
         returns (
@@ -1469,8 +1675,12 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
     }
 
     // Supply of all properly locked balances at the given epoch
-    function totalSupplyAtEpoch(uint256 _epoch) public view returns (uint256 supply) {
-        uint256 epochStart = uint256(epochs[0].date).add(uint256(_epoch).mul(rewardsDuration));
+    function totalSupplyAtEpoch(
+        uint256 _epoch
+    ) public view returns (uint256 supply) {
+        uint256 epochStart = uint256(epochs[0].date).add(
+            uint256(_epoch).mul(rewardsDuration)
+        );
         require(epochStart < block.timestamp, "Epoch is in the future");
 
         uint256 cutoffEpoch = epochStart.sub(lockDuration);
@@ -1521,23 +1731,34 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
     ****************************************/
 
     // Address and claimable amount of all reward tokens for the given account
-    function claimableRewards(address _account) external view returns (EarnedData[] memory userRewards) {
+    function claimableRewards(
+        address _account
+    ) external view returns (EarnedData[] memory userRewards) {
         userRewards = new EarnedData[](rewardTokens.length);
         Balances storage userBalance = balances[_account];
         uint256 userRewardsLength = userRewards.length;
         for (uint256 i = 0; i < userRewardsLength; i++) {
             address token = rewardTokens[i];
             userRewards[i].token = token;
-            userRewards[i].amount = _earned(_account, token, userBalance.locked);
+            userRewards[i].amount = _earned(
+                _account,
+                token,
+                userBalance.locked
+            );
         }
         return userRewards;
     }
 
-    function lastTimeRewardApplicable(address _rewardsToken) external view returns (uint256) {
-        return _lastTimeRewardApplicable(rewardData[_rewardsToken].periodFinish);
+    function lastTimeRewardApplicable(
+        address _rewardsToken
+    ) external view returns (uint256) {
+        return
+            _lastTimeRewardApplicable(rewardData[_rewardsToken].periodFinish);
     }
 
-    function rewardPerToken(address _rewardsToken) external view returns (uint256) {
+    function rewardPerToken(
+        address _rewardsToken
+    ) external view returns (uint256) {
         return _rewardPerToken(_rewardsToken);
     }
 
@@ -1547,20 +1768,32 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         uint256 _balance
     ) internal view returns (uint256) {
         UserData memory data = userData[_user][_rewardsToken];
-        return _balance.mul(_rewardPerToken(_rewardsToken).sub(data.rewardPerTokenPaid)).div(1e18).add(data.rewards);
+        return
+            _balance
+                .mul(
+                    _rewardPerToken(_rewardsToken).sub(data.rewardPerTokenPaid)
+                )
+                .div(1e18)
+                .add(data.rewards);
     }
 
-    function _lastTimeRewardApplicable(uint256 _finishTime) internal view returns (uint256) {
+    function _lastTimeRewardApplicable(
+        uint256 _finishTime
+    ) internal view returns (uint256) {
         return AraMath.min(block.timestamp, _finishTime);
     }
 
-    function _rewardPerToken(address _rewardsToken) internal view returns (uint256) {
+    function _rewardPerToken(
+        address _rewardsToken
+    ) internal view returns (uint256) {
         if (lockedSupply == 0) {
             return rewardData[_rewardsToken].rewardPerTokenStored;
         }
         return
             uint256(rewardData[_rewardsToken].rewardPerTokenStored).add(
-                _lastTimeRewardApplicable(rewardData[_rewardsToken].periodFinish)
+                _lastTimeRewardApplicable(
+                    rewardData[_rewardsToken].periodFinish
+                )
                     .sub(rewardData[_rewardsToken].lastUpdateTime)
                     .mul(rewardData[_rewardsToken].rewardRate)
                     .mul(1e18)
@@ -1572,12 +1805,19 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
                 REWARD FUNDING
     ****************************************/
 
-    function queueNewRewards(address _rewardsToken, uint256 _rewards) external nonReentrant {
+    function queueNewRewards(
+        address _rewardsToken,
+        uint256 _rewards
+    ) external nonReentrant {
         require(_rewards > 0, "No reward");
 
         RewardData storage rdata = rewardData[_rewardsToken];
 
-        IERC20(_rewardsToken).safeTransferFrom(msg.sender, address(this), _rewards);
+        IERC20(_rewardsToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _rewards
+        );
 
         _rewards = _rewards.add(queuedRewards[_rewardsToken]);
         require(_rewards < 1e25, "!rewards");
@@ -1589,7 +1829,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         }
 
         //et = now - (finish-duration)
-        uint256 elapsedTime = block.timestamp.sub(rdata.periodFinish.sub(rewardsDuration.to32()));
+        uint256 elapsedTime = block.timestamp.sub(
+            rdata.periodFinish.sub(rewardsDuration.to32())
+        );
         //current at now: rewardRate * elapsedTime
         uint256 currentAtNow = rdata.rewardRate * elapsedTime;
         uint256 queuedRatio = currentAtNow.mul(1000).div(_rewards);
@@ -1601,15 +1843,23 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         }
     }
 
-    function _notifyReward(address _rewardsToken, uint256 _reward) internal updateReward(address(0)) {
+    function _notifyReward(
+        address _rewardsToken,
+        uint256 _reward
+    ) internal updateReward(address(0)) {
         RewardData storage rdata = rewardData[_rewardsToken];
 
         if (block.timestamp >= rdata.periodFinish) {
             rdata.rewardRate = _reward.div(rewardsDuration).to96();
         } else {
-            uint256 remaining = uint256(rdata.periodFinish).sub(block.timestamp);
+            uint256 remaining = uint256(rdata.periodFinish).sub(
+                block.timestamp
+            );
             uint256 leftover = remaining.mul(rdata.rewardRate);
-            rdata.rewardRate = _reward.add(leftover).div(rewardsDuration).to96();
+            rdata.rewardRate = _reward
+                .add(leftover)
+                .div(rewardsDuration)
+                .to96();
         }
 
         // Equivalent to 10 million tokens over a weeks duration

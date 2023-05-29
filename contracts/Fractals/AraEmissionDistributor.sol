@@ -959,7 +959,7 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     mapping(address => uint256) public totalNftsByUser;
 
     uint256 private constant ACC_ANOTHERTOKEN_PRECISION = 1e12; // precision used for calculations involving another token
-    uint256 public constant POOL_PERCENTAGE = 0.876e3; // Percentage of ARA allocated to pools
+    // uint256 public constant POOL_PERCENTAGE = 0.876e3; // Percentage of ARA allocated to pools
 
     uint256 public constant DENOMINATOR = 1e3; // Constant denominator for calculating allocation points
 
@@ -1112,7 +1112,12 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256[] storage tokenIdsByCaller = tokenIdsByUser[msg.sender];
         for (uint256 i = 0; i < tokenIdsByCaller.length; ) {
             if (tokenIdsByCaller[i] == _tokenId) {
-                delete tokenIdsByCaller[i];
+                // Swap the element to remove with the last element
+                tokenIdsByCaller[i] = tokenIdsByCaller[
+                    tokenIdsByCaller.length - 1
+                ];
+                // Pop the last element from the array
+                tokenIdsByCaller.pop();
                 break;
             }
             unchecked {
@@ -1178,7 +1183,12 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256[] storage tokenIdsByCaller = tokenIdsByUser[msg.sender];
         for (uint256 i = 0; i < tokenIdsByCaller.length; ) {
             if (tokenIdsByCaller[i] == _tokenId) {
-                delete tokenIdsByCaller[i];
+                // Swap the element to remove with the last element
+                tokenIdsByCaller[i] = tokenIdsByCaller[
+                    tokenIdsByCaller.length - 1
+                ];
+                // Pop the last element from the array
+                tokenIdsByCaller.pop();
                 break;
             }
             unchecked {
@@ -1328,12 +1338,10 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256 anotherTokenBalance = IERC20(pool.tokenReward).balanceOf(
             address(this)
         );
-        // If the requested amount is more than the balance, transfer the entire balance
-        if (_amount > anotherTokenBalance) {
-            IERC20(pool.tokenReward).safeTransfer(_to, anotherTokenBalance);
-        } else {
-            // Otherwise, transfer the requested amount
-            IERC20(pool.tokenReward).safeTransfer(_to, _amount);
-        }
+        require(
+            anotherTokenBalance >= _amount && _amount > 0,
+            "Insufficient Reward tokens available for transfer."
+        );
+        IERC20(pool.tokenReward).safeTransfer(_to, anotherTokenBalance);
     }
 }

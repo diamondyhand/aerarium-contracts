@@ -64,13 +64,11 @@ contract TokenSwap {
     IERC721 public oldToken;
     IERC721 public newToken;
     address public owner;
-    uint256 _tokenIdGeneral;
 
     constructor(address _oldTokenAddress, address _newTokenAddress) {
         oldToken = IERC721(_oldTokenAddress);
         newToken = IERC721(_newTokenAddress);
         owner = msg.sender;
-        _tokenIdGeneral = 0;
     }
 
     function balance(uint256 _tokenId) public view returns (bool) {
@@ -116,10 +114,6 @@ contract TokenSwap {
     }
 
     function depositNewTokens(uint256[] memory _tokenIds) public {
-        require(
-            msg.sender == owner,
-            "Only the contract owner can deposit new tokens."
-        );
         for (uint i = 0; i < _tokenIds.length; i++) {
             newToken.transferFrom(msg.sender, address(this), _tokenIds[i]);
         }

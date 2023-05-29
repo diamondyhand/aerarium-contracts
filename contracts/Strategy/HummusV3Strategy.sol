@@ -4,12 +4,18 @@
 interface IMasterHummusV2 {
     function poolLength() external view returns (uint256);
 
-    function userInfo(uint256, address)
+    function userInfo(
+        uint256,
+        address
+    )
         external
         view
         returns (uint256 amount, uint256 rewardDebt, uint256 factor);
 
-    function pendingTokens(uint256 _pid, address _user)
+    function pendingTokens(
+        uint256 _pid,
+        address _user
+    )
         external
         view
         returns (
@@ -19,7 +25,9 @@ interface IMasterHummusV2 {
             uint256 pendingBonusToken
         );
 
-    function rewarderBonusTokenInfo(uint256 _pid)
+    function rewarderBonusTokenInfo(
+        uint256 _pid
+    )
         external
         view
         returns (address bonusTokenAddress, string memory bonusTokenSymbol);
@@ -30,27 +38,25 @@ interface IMasterHummusV2 {
 
     function poolAdjustFactor(uint256 pid) external view returns (uint256);
 
-    function deposit(uint256 _pid, uint256 _amount) external returns (uint256, uint256);
+    function deposit(
+        uint256 _pid,
+        uint256 _amount
+    ) external returns (uint256, uint256);
 
-    function multiClaim(uint256[] calldata _pids)
-        external
-        returns (
-            uint256,
-            uint256[] memory,
-            uint256[] memory
-        );
+    function multiClaim(
+        uint256[] calldata _pids
+    ) external returns (uint256, uint256[] memory, uint256[] memory);
 
-    function withdraw(uint256 _pid, uint256 _amount) external returns (uint256, uint256);
+    function withdraw(
+        uint256 _pid,
+        uint256 _amount
+    ) external returns (uint256, uint256);
 
     function emergencyWithdraw(uint256 _pid) external;
 
     function migrate(uint256[] calldata _pids) external;
 
-    function depositFor(
-        uint256 _pid,
-        uint256 _amount,
-        address _user
-    ) external;
+    function depositFor(uint256 _pid, uint256 _amount, address _user) external;
 
     function updateFactor(address _user, uint256 _newVeHumBalance) external;
 }
@@ -85,7 +91,9 @@ library Address {
 
         uint256 size;
         // solhint-disable-next-line no-inline-assembly
-        assembly { size := extcodesize(account) }
+        assembly {
+            size := extcodesize(account)
+        }
         return size > 0;
     }
 
@@ -106,11 +114,17 @@ library Address {
      * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "Address: insufficient balance");
+        require(
+            address(this).balance >= amount,
+            "Address: insufficient balance"
+        );
 
         // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
-        (bool success, ) = recipient.call{ value: amount }("");
-        require(success, "Address: unable to send value, recipient may have reverted");
+        (bool success, ) = recipient.call{value: amount}("");
+        require(
+            success,
+            "Address: unable to send value, recipient may have reverted"
+        );
     }
 
     /**
@@ -131,8 +145,11 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
-      return functionCall(target, data, "Address: low-level call failed");
+    function functionCall(
+        address target,
+        bytes memory data
+    ) internal returns (bytes memory) {
+        return functionCall(target, data, "Address: low-level call failed");
     }
 
     /**
@@ -141,7 +158,11 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
+    function functionCall(
+        address target,
+        bytes memory data,
+        string memory errorMessage
+    ) internal returns (bytes memory) {
         return functionCallWithValue(target, data, 0, errorMessage);
     }
 
@@ -156,8 +177,18 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCallWithValue(address target, bytes memory data, uint256 value) internal returns (bytes memory) {
-        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
+    function functionCallWithValue(
+        address target,
+        bytes memory data,
+        uint256 value
+    ) internal returns (bytes memory) {
+        return
+            functionCallWithValue(
+                target,
+                data,
+                value,
+                "Address: low-level call with value failed"
+            );
     }
 
     /**
@@ -166,12 +197,22 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCallWithValue(address target, bytes memory data, uint256 value, string memory errorMessage) internal returns (bytes memory) {
-        require(address(this).balance >= value, "Address: insufficient balance for call");
+    function functionCallWithValue(
+        address target,
+        bytes memory data,
+        uint256 value,
+        string memory errorMessage
+    ) internal returns (bytes memory) {
+        require(
+            address(this).balance >= value,
+            "Address: insufficient balance for call"
+        );
         require(isContract(target), "Address: call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = target.call{ value: value }(data);
+        (bool success, bytes memory returndata) = target.call{value: value}(
+            data
+        );
         return _verifyCallResult(success, returndata, errorMessage);
     }
 
@@ -181,8 +222,16 @@ library Address {
      *
      * _Available since v3.3._
      */
-    function functionStaticCall(address target, bytes memory data) internal view returns (bytes memory) {
-        return functionStaticCall(target, data, "Address: low-level static call failed");
+    function functionStaticCall(
+        address target,
+        bytes memory data
+    ) internal view returns (bytes memory) {
+        return
+            functionStaticCall(
+                target,
+                data,
+                "Address: low-level static call failed"
+            );
     }
 
     /**
@@ -191,7 +240,11 @@ library Address {
      *
      * _Available since v3.3._
      */
-    function functionStaticCall(address target, bytes memory data, string memory errorMessage) internal view returns (bytes memory) {
+    function functionStaticCall(
+        address target,
+        bytes memory data,
+        string memory errorMessage
+    ) internal view returns (bytes memory) {
         require(isContract(target), "Address: static call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
@@ -205,8 +258,16 @@ library Address {
      *
      * _Available since v3.4._
      */
-    function functionDelegateCall(address target, bytes memory data) internal returns (bytes memory) {
-        return functionDelegateCall(target, data, "Address: low-level delegate call failed");
+    function functionDelegateCall(
+        address target,
+        bytes memory data
+    ) internal returns (bytes memory) {
+        return
+            functionDelegateCall(
+                target,
+                data,
+                "Address: low-level delegate call failed"
+            );
     }
 
     /**
@@ -215,7 +276,11 @@ library Address {
      *
      * _Available since v3.4._
      */
-    function functionDelegateCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
+    function functionDelegateCall(
+        address target,
+        bytes memory data,
+        string memory errorMessage
+    ) internal returns (bytes memory) {
         require(isContract(target), "Address: delegate call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
@@ -223,7 +288,11 @@ library Address {
         return _verifyCallResult(success, returndata, errorMessage);
     }
 
-    function _verifyCallResult(bool success, bytes memory returndata, string memory errorMessage) private pure returns(bytes memory) {
+    function _verifyCallResult(
+        bool success,
+        bytes memory returndata,
+        string memory errorMessage
+    ) private pure returns (bytes memory) {
         if (success) {
             return returndata;
         } else {
@@ -264,7 +333,10 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+    function tryAdd(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool, uint256) {
         uint256 c = a + b;
         if (c < a) return (false, 0);
         return (true, c);
@@ -275,7 +347,10 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+    function trySub(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool, uint256) {
         if (b > a) return (false, 0);
         return (true, a - b);
     }
@@ -285,7 +360,10 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+    function tryMul(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool, uint256) {
         // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
         // benefit is lost if 'b' is also tested.
         // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
@@ -300,7 +378,10 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+    function tryDiv(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool, uint256) {
         if (b == 0) return (false, 0);
         return (true, a / b);
     }
@@ -310,7 +391,10 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+    function tryMod(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool, uint256) {
         if (b == 0) return (false, 0);
         return (true, a % b);
     }
@@ -410,7 +494,11 @@ library SafeMath {
      *
      * - Subtraction cannot overflow.
      */
-    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function sub(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b <= a, errorMessage);
         return a - b;
     }
@@ -430,7 +518,11 @@ library SafeMath {
      *
      * - The divisor cannot be zero.
      */
-    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function div(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b > 0, errorMessage);
         return a / b;
     }
@@ -450,7 +542,11 @@ library SafeMath {
      *
      * - The divisor cannot be zero.
      */
-    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function mod(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b > 0, errorMessage);
         return a % b;
     }
@@ -472,11 +568,22 @@ library SafeERC20 {
     using Address for address;
 
     function safeTransfer(IERC20 token, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transfer.selector, to, value)
+        );
     }
 
-    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+    function safeTransferFrom(
+        IERC20 token,
+        address from,
+        address to,
+        uint256 value
+    ) internal {
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transferFrom.selector, from, to, value)
+        );
     }
 
     /**
@@ -486,25 +593,60 @@ library SafeERC20 {
      * Whenever possible, use {safeIncreaseAllowance} and
      * {safeDecreaseAllowance} instead.
      */
-    function safeApprove(IERC20 token, address spender, uint256 value) internal {
+    function safeApprove(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
         // safeApprove should only be called when setting an initial allowance,
         // or when resetting it to zero. To increase and decrease it, use
         // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
         // solhint-disable-next-line max-line-length
-        require((value == 0) || (token.allowance(address(this), spender) == 0),
+        require(
+            (value == 0) || (token.allowance(address(this), spender) == 0),
             "SafeERC20: approve from non-zero to non-zero allowance"
         );
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.approve.selector, spender, value)
+        );
     }
 
-    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).add(value);
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    function safeIncreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).add(
+            value
+        );
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(
+                token.approve.selector,
+                spender,
+                newAllowance
+            )
+        );
     }
 
-    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    function safeDecreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).sub(
+            value,
+            "SafeERC20: decreased allowance below zero"
+        );
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(
+                token.approve.selector,
+                spender,
+                newAllowance
+            )
+        );
     }
 
     /**
@@ -518,10 +660,17 @@ library SafeERC20 {
         // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
         // the target address contains contract code and also asserts for success in the low-level call.
 
-        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
-        if (returndata.length > 0) { // Return data is optional
+        bytes memory returndata = address(token).functionCall(
+            data,
+            "SafeERC20: low-level call failed"
+        );
+        if (returndata.length > 0) {
+            // Return data is optional
             // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+            require(
+                abi.decode(returndata, (bool)),
+                "SafeERC20: ERC20 operation did not succeed"
+            );
         }
     }
 }
@@ -549,7 +698,10 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(address recipient, uint256 amount) external returns (bool);
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -558,7 +710,10 @@ interface IERC20 {
      *
      * This value changes when {approve} or {transferFrom} are called.
      */
-    function allowance(address owner, address spender) external view returns (uint256);
+    function allowance(
+        address owner,
+        address spender
+    ) external view returns (uint256);
 
     /**
      * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
@@ -585,7 +740,11 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
@@ -599,13 +758,17 @@ interface IERC20 {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 }
 
 pragma solidity 0.6.12;
 
 interface ILiquidDepositor {
-  function treasury() external view returns (address);
+    function treasury() external view returns (address);
 }
 
 pragma solidity ^0.6.7;
@@ -631,35 +794,37 @@ interface IMasterChef {
 
     function emergencyWithdraw(uint256 _pid) external;
 
-    function getMultiplier(uint256 _from, uint256 _to)
-        external
-        view
-        returns (uint256);
+    function getMultiplier(
+        uint256 _from,
+        uint256 _to
+    ) external view returns (uint256);
 
     function massUpdatePools() external;
 
     function owner() external view returns (address);
 
-    function pendingPickle(uint256 _pid, address _user)
-        external
-        view
-        returns (uint256);
+    function pendingPickle(
+        uint256 _pid,
+        address _user
+    ) external view returns (uint256);
 
-    function pendingReward(uint256 _pid, address _user)
-        external
-        view
-        returns (uint256);
+    function pendingReward(
+        uint256 _pid,
+        address _user
+    ) external view returns (uint256);
 
-    function pending(uint256 _pid, address _user)
-        external
-        view
-        returns (uint256);
+    function pending(
+        uint256 _pid,
+        address _user
+    ) external view returns (uint256);
 
     function pickle() external view returns (address);
 
     function picklePerBlock() external view returns (uint256);
 
-    function poolInfo(uint256)
+    function poolInfo(
+        uint256
+    )
         external
         view
         returns (
@@ -673,11 +838,7 @@ interface IMasterChef {
 
     function renounceOwnership() external;
 
-    function set(
-        uint256 _pid,
-        uint256 _allocPoint,
-        bool _withUpdate
-    ) external;
+    function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) external;
 
     function setBonusEndBlock(uint256 _bonusEndBlock) external;
 
@@ -693,10 +854,10 @@ interface IMasterChef {
 
     function updatePool(uint256 _pid) external;
 
-    function userInfo(uint256, address)
-        external
-        view
-        returns (uint256 amount, uint256 rewardDebt);
+    function userInfo(
+        uint256,
+        address
+    ) external view returns (uint256 amount, uint256 rewardDebt);
 
     function withdraw(uint256 _pid, uint256 _amount) external;
 }
@@ -717,10 +878,7 @@ abstract contract StrategyBase {
 
     mapping(address => bool) public harvesters;
 
-    constructor(
-        address _want,
-        address _depositor
-    ) public {
+    constructor(address _want, address _depositor) public {
         require(_want != address(0));
         require(_depositor != address(0));
 
@@ -731,9 +889,11 @@ abstract contract StrategyBase {
 
     // **** Modifiers **** //
 
-    modifier onlyBenevolent {
+    modifier onlyBenevolent() {
         require(
-            harvesters[msg.sender] || msg.sender == governance || msg.sender == depositor
+            harvesters[msg.sender] ||
+                msg.sender == governance ||
+                msg.sender == depositor
         );
         _;
     }
@@ -744,7 +904,7 @@ abstract contract StrategyBase {
         return IERC20(want).balanceOf(address(this));
     }
 
-    function balanceOfPool() public virtual view returns (uint256);
+    function balanceOfPool() public view virtual returns (uint256);
 
     function balanceOf() public view returns (uint256) {
         return balanceOfWant().add(balanceOfPool());
@@ -753,9 +913,8 @@ abstract contract StrategyBase {
     // **** Setters **** //
 
     function whitelistHarvesters(address[] calldata _harvesters) external {
-        require(msg.sender == governance || harvesters[msg.sender], "not authorized");
-             
-        for (uint i = 0; i < _harvesters.length; i ++) {
+        require(msg.sender == governance, "not authorized");
+        for (uint i = 0; i < _harvesters.length; i++) {
             harvesters[_harvesters[i]] = true;
         }
     }
@@ -763,7 +922,7 @@ abstract contract StrategyBase {
     function revokeHarvesters(address[] calldata _harvesters) external {
         require(msg.sender == governance, "not authorized");
 
-        for (uint i = 0; i < _harvesters.length; i ++) {
+        for (uint i = 0; i < _harvesters.length; i++) {
             harvesters[_harvesters[i]] = false;
         }
     }
@@ -782,15 +941,16 @@ abstract contract StrategyBase {
     function deposit() public virtual;
 
     // Controller only function for creating additional rewards from dust
-    function withdraw(IERC20 _asset) external onlyBenevolent returns (uint256 balance) {
-        require(msg.sender == governance, "!governance");
+    function withdrawAssets(
+        IERC20 _asset
+    ) external onlyBenevolent returns (uint256 balance) {
         require(want != address(_asset), "want");
         balance = _asset.balanceOf(address(this));
         _asset.safeTransfer(depositor, balance);
     }
 
     // Withdraw partial funds
-    function withdraw(uint256 _amount) external returns (uint256) {
+    function withdrawTokens(uint256 _amount) external returns (uint256) {
         require(msg.sender == depositor, "!depositor");
         uint256 _balance = IERC20(want).balanceOf(address(this));
         if (_balance < _amount) {
@@ -842,27 +1002,27 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
         address _depositor,
         address _bonusToken,
         address _devAddress
-    )
-        public
-        StrategyBase(
-            _lp,
-            _depositor
-        )
-    {
+    ) public StrategyBase(_lp, _depositor) {
         poolId = _poolId;
         rewardToken = _rewardToken;
         masterchef = _masterchef;
         bonusToken = _bonusToken;
         devAddress = _devAddress;
     }
-    
-    function balanceOfPool() public override view returns (uint256) {
-        (uint256 amount, ) = IMasterChef(masterchef).userInfo(poolId, address(this));
+
+    function balanceOfPool() public view override returns (uint256) {
+        (uint256 amount, ) = IMasterChef(masterchef).userInfo(
+            poolId,
+            address(this)
+        );
         return amount;
     }
 
-    function getHarvestable() external virtual view returns (uint256) {
-        uint256 _pendingReward = IMasterChef(masterchef).pendingReward(poolId, address(this));
+    function getHarvestable() external view virtual returns (uint256) {
+        uint256 _pendingReward = IMasterChef(masterchef).pendingReward(
+            poolId,
+            address(this)
+        );
         return _pendingReward;
     }
 
@@ -871,16 +1031,17 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
     function deposit() public override {
         uint256 _want = IERC20(want).balanceOf(address(this));
         if (_want > 0) {
-            IERC20(want).approve(masterchef, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
+            IERC20(want).approve(
+                masterchef,
+                115792089237316195423570985008687907853269984665640564039457584007913129639935
+            );
             IMasterHummusV2(masterchef).deposit(poolId, _want);
         }
     }
 
-    function _withdrawSome(uint256 _amount)
-        internal
-        override
-        returns (uint256)
-    {
+    function _withdrawSome(
+        uint256 _amount
+    ) internal override returns (uint256) {
         IMasterHummusV2(masterchef).withdraw(poolId, _amount);
         return _amount;
     }
@@ -889,10 +1050,7 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
     function harvest(uint256[] memory pids) public override onlyBenevolent {
         IMasterHummusV2(masterchef).multiClaim(pids);
         uint256 _rewardBalance = IERC20(rewardToken).balanceOf(address(this));
-        IERC20(rewardToken).transfer(
-            devAddress,
-            _rewardBalance
-        );
+        IERC20(rewardToken).transfer(devAddress, _rewardBalance);
     }
 
     function harvestNativeToken() public payable {
@@ -915,39 +1073,37 @@ contract StrategyHummusFarm is StrategyGeneralMasterChefBase {
     address public masterChef = 0x9c3cdE31f153FBCE9Bbee1fa9a6596AbE9BA40fC;
 
     constructor(
-      address depositor,
-      address lp,
-      uint256 pid,
-      address bonusToken,
-      address devAddress
+        address depositor,
+        address lp,
+        uint256 pid,
+        address bonusToken,
+        address devAddress
     )
-      public
-      StrategyGeneralMasterChefBase(
-        hum,
-        masterChef,
-        pid, // pool id
-        lp,
-        depositor,
-        bonusToken,
-        devAddress
-      )
+        public
+        StrategyGeneralMasterChefBase(
+            hum,
+            masterChef,
+            pid, // pool id
+            lp,
+            depositor,
+            bonusToken,
+            devAddress
+        )
     {}
 
-    function getHarvestable() external override view returns (uint256) {
+    function getHarvestable() external view override returns (uint256) {
         //mudar esta shit
-        (uint256 pendingHum,
-            ,
-            ,
-             ) = IMasterHummusV2(masterchef).pendingTokens(poolId, address(this));
+        (uint256 pendingHum, , , ) = IMasterHummusV2(masterchef).pendingTokens(
+            poolId,
+            address(this)
+        );
         return pendingHum;
     }
 
     function getHarvestableBonusToken() external view returns (uint256) {
         //mudar esta shit
-        (,
-            ,
-            ,
-             uint256 pendingBonusToken) = IMasterHummusV2(masterchef).pendingTokens(poolId, address(this));
+        (, , , uint256 pendingBonusToken) = IMasterHummusV2(masterchef)
+            .pendingTokens(poolId, address(this));
         return pendingBonusToken;
     }
 }
