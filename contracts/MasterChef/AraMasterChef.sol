@@ -1327,7 +1327,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         address _devaddr,
         address _feeAddress,
         uint256 _araPerBlock
-    ) public {
+    ) {
         ara = _ara;
         devaddr = _devaddr;
         feeAddress = _feeAddress;

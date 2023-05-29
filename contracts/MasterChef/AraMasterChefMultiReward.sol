@@ -33,7 +33,7 @@ abstract contract ReentrancyGuard {
 
     uint256 private _status;
 
-    constructor() internal {
+    constructor() {
         _status = _NOT_ENTERED;
     }
 
@@ -1326,8 +1326,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         uint256 rewardPerBlock
     );
 
-    constructor(address _devaddr, address _feeAddress) public {
-        devaddr = _devaddr;
+    constructor(address _feeAddress) {
         feeAddress = _feeAddress;
     }
 
@@ -1360,21 +1359,18 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         strategies.push(_strategy);
         lpToken.push(IERC20(_lpToken));
-        poolInfo.push(
-            PoolInfo({
-                lpToken: _lpToken,
-                allocPoint: _allocPoint,
-                lastRewardBlock: lastRewardBlock,
-                totalRewardDebt: 0,
-                rewardTokens: _rewardTokens,
-                depositFeeBP: _depositFeeBP
-            })
-        );
+        uint poolId = poolInfo.length;
+        PoolInfo storage newPool = poolInfo[++poolId];
+        newPool.lpToken = _lpToken;
+        newPool.allocPoint = _allocPoint;
+        newPool.lastRewardBlock = lastRewardBlock;
+        newPool.totalRewardDebt = 0;
+        newPool.rewardTokens = _rewardTokens;
+        newPool.depositFeeBP = _depositFeeBP;
         for (uint256 i = 0; i < _rewardTokens.length; i++) {
-            poolInfo[poolInfo.length - 1].accRewardPerShare[
-                _rewardTokens[i]
-            ] = 0;
+            newPool.accRewardPerShare[_rewardTokens[i]] = 0;
         }
+
         emit AddPool(
             poolInfo.length.sub(1),
             _allocPoint,
