@@ -57,9 +57,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
     uint public epoch;
     mapping(uint => Point) public point_history; // epoch -> unsigned point
-    mapping(uint => Point[1000000000]) public user_point_history; // user -> Point[user_epoch]
+    mapping(uint => Point[1000000000]) public token_point_history; // tokenId -> Point[token_epoch]
 
-    mapping(uint => uint) public user_point_epoch;
+    mapping(uint => uint) public token_point_epoch;
     mapping(uint => int128) public slope_changes; // time -> signed slope change
 
     mapping(uint => uint) public attachments;
@@ -167,20 +167,20 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @notice Get the most recently recorded rate of voting power decrease for `_tokenId`
     /// @param _tokenId token of the NFT
     /// @return Value of the slope
-    function get_last_user_slope(uint _tokenId) external view returns (int128) {
-        uint uepoch = user_point_epoch[_tokenId];
-        return user_point_history[_tokenId][uepoch].slope;
+    function get_last_token_slope(uint _tokenId) external view returns (int128) {
+        uint uepoch = token_point_epoch[_tokenId];
+        return token_point_history[_tokenId][uepoch].slope;
     }
 
     /// @notice Get the timestamp for checkpoint `_idx` for `_tokenId`
     /// @param _tokenId token of the NFT
     /// @param _idx User epoch number
     /// @return Epoch time of the checkpoint
-    function user_point_history__ts(
+    function token_point_history__ts(
         uint _tokenId,
         uint _idx
     ) external view returns (uint) {
-        return user_point_history[_tokenId][_idx].ts;
+        return token_point_history[_tokenId][_idx].ts;
     }
 
     /// @notice Get timestamp when `_tokenId`'s lock finishes
@@ -647,11 +647,11 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         uint _tokenId,
         uint _t
     ) internal view returns (uint) {
-        uint _epoch = user_point_epoch[_tokenId];
+        uint _epoch = token_point_epoch[_tokenId];
         if (_epoch == 0) {
             return 0;
         } else {
-            Point memory last_point = user_point_history[_tokenId][_epoch];
+            Point memory last_point = token_point_history[_tokenId][_epoch];
             last_point.bias -=
                 last_point.slope *
                 int128(int256(_t) - int256(last_point.ts));
@@ -706,21 +706,21 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
         // Binary search
         uint _min = 0;
-        uint _max = user_point_epoch[_tokenId];
+        uint _max = token_point_epoch[_tokenId];
         for (uint i = 0; i < 128; ++i) {
             // Will be always enough for 128-bit numbers
             if (_min >= _max) {
                 break;
             }
             uint _mid = (_min + _max + 1) / 2;
-            if (user_point_history[_tokenId][_mid].blk <= _block) {
+            if (token_point_history[_tokenId][_mid].blk <= _block) {
                 _min = _mid;
             } else {
                 _max = _mid - 1;
             }
         }
 
-        Point memory upoint = user_point_history[_tokenId][_min];
+        Point memory upoint = token_point_history[_tokenId][_min];
 
         uint max_epoch = epoch;
         uint _epoch = _find_block_epoch(_block, max_epoch);
