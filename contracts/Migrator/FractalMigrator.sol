@@ -1,4 +1,6 @@
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: MIT
+
+pragma solidity 0.8.18;
 
 /**
  * @dev Interface of the ERC721 standard as defined in the EIP.

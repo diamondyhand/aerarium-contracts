@@ -1,4 +1,6 @@
-pragma solidity ^0.8.7;
+// SPDX-License-Identifier: MIT
+
+pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -11,6 +13,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 contract ve is IERC721, IERC721Metadata, Ownable {
+    using SafeERC20 for IERC20;
     enum DepositType {
         DEPOSIT_FOR_TYPE,
         CREATE_LOCK_TYPE,
@@ -93,6 +96,8 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
     /// @dev Mapping of interface id to bool about whether or not it's supported
     mapping(bytes4 => bool) internal supportedInterfaces;
+
+    uint256 public tSupply;
 
     /// @dev ERC165 interface ID of ERC165
     bytes4 internal constant ERC165_INTERFACE_ID = 0x01ffc9a7;

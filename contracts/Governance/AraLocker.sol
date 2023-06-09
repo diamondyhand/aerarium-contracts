@@ -487,7 +487,7 @@ interface IAraLocker {
 
     function getReward(address _account) external;
 
-    function getRewardWithSpecific(address _account, bool[] _skipIds) external;
+    function getRewardWithSpecific(address _account, bool[] memory _skipIds) external;
 }
 
 interface IExtraRewardsDistributor {
@@ -842,7 +842,7 @@ abstract contract Ownable is Context {
 }
 
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.11;
+pragma solidity 0.8.18;
 
 interface IRewardStaking {
     function stakeFor(address, uint256) external;

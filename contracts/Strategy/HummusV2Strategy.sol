@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 /**
  * @dev Interface of the MasterHummusV2
  */
@@ -61,7 +63,7 @@ interface IMasterHummusV2 {
     function updateFactor(address _user, uint256 _newVeHumBalance) external;
 }
 
-pragma solidity >=0.6.2 <0.8.0;
+pragma solidity 0.8.18;
 
 /**
  * @dev Collection of functions related to the address type
@@ -312,7 +314,7 @@ library Address {
     }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity 0.8.18;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -552,7 +554,7 @@ library SafeMath {
     }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity 0.8.18;
 
 /**
  * @title SafeERC20
@@ -675,7 +677,7 @@ library SafeERC20 {
     }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity 0.8.18;
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
@@ -765,13 +767,13 @@ interface IERC20 {
     );
 }
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.18;
 
 interface ILiquidDepositor {
     function treasury() external view returns (address);
 }
 
-pragma solidity ^0.6.7;
+pragma solidity 0.8.18;
 
 interface IMasterChef {
     function BONUS_MULTIPLIER() external view returns (uint256);
@@ -862,7 +864,7 @@ interface IMasterChef {
     function withdraw(uint256 _pid, uint256 _amount) external;
 }
 
-pragma solidity ^0.6.7;
+pragma solidity 0.8.18;
 
 abstract contract StrategyBase {
     using SafeERC20 for IERC20;
@@ -878,7 +880,7 @@ abstract contract StrategyBase {
 
     mapping(address => bool) public harvesters;
 
-    constructor(address _want, address _depositor) public {
+    constructor(address _want, address _depositor) {
         require(_want != address(0));
         require(_depositor != address(0));
 
@@ -983,7 +985,7 @@ abstract contract StrategyBase {
     function harvest(uint256[] memory pids) public virtual;
 }
 
-pragma solidity ^0.6.7;
+pragma solidity 0.8.18;
 
 abstract contract StrategyGeneralMasterChefBase is StrategyBase {
     // Token addresses
@@ -1003,7 +1005,7 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
         address _depositor,
         address _bonusToken,
         address _devAddress
-    ) public StrategyBase(_lp, _depositor) {
+    ) StrategyBase(_lp, _depositor) {
         poolId = _poolId;
         rewardToken = _rewardToken;
         masterchef = _masterchef;
@@ -1066,7 +1068,7 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
     }
 }
 
-pragma solidity ^0.6.7;
+pragma solidity 0.8.18;
 
 contract StrategyHummusFarm is StrategyGeneralMasterChefBase {
     // Token addresses
@@ -1080,7 +1082,6 @@ contract StrategyHummusFarm is StrategyGeneralMasterChefBase {
         address bonusToken,
         address devAddress
     )
-        public
         StrategyGeneralMasterChefBase(
             hum,
             masterChef,

@@ -1,4 +1,6 @@
-pragma solidity >=0.6.0 <0.8.0;
+// SPDX-License-Identifier: MIT
+
+pragma solidity 0.8.18;
 
 /*
  * @dev Provides information about the current execution context, including the
@@ -12,7 +14,7 @@ pragma solidity >=0.6.0 <0.8.0;
  */
 abstract contract Context {
     function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
+        return payable(msg.sender);
     }
 
     function _msgData() internal view virtual returns (bytes memory) {
@@ -21,7 +23,7 @@ abstract contract Context {
     }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity 0.8.18;
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
@@ -97,7 +99,7 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity 0.8.18;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -310,7 +312,7 @@ library SafeMath {
     }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity 0.8.18;
 
 /**
  * @dev Implementation of the {IERC20} interface.
@@ -358,7 +360,7 @@ contract ERC20 is Context, IERC20 {
      * All three of these values are immutable: they can only be set once during
      * construction.
      */
-    constructor (string memory name_, string memory symbol_) public {
+    constructor (string memory name_, string memory symbol_) {
         _name = name_;
         _symbol = symbol_;
         _decimals = 18;
@@ -611,7 +613,7 @@ contract ERC20 is Context, IERC20 {
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity 0.8.18;
 
 /**
  * @dev Extension of {ERC20} that allows token holders to destroy both their own
@@ -649,7 +651,7 @@ abstract contract ERC20Burnable is Context, ERC20 {
     }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity 0.8.18;
 
 /**
  * @dev Standard math utilities missing in the Solidity language.
@@ -679,7 +681,7 @@ library Math {
     }
 }
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.18;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -837,7 +839,7 @@ library SafeMath8 {
     }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity 0.8.18;
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -859,7 +861,7 @@ abstract contract Ownable is Context {
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
-    constructor () internal {
+    constructor () {
         address msgSender = _msgSender();
         _owner = msgSender;
         emit OwnershipTransferred(address(0), msgSender);
@@ -903,14 +905,14 @@ abstract contract Ownable is Context {
     }
 }
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.18;
 
 contract Operator is Context, Ownable {
     address private _operator;
 
     event OperatorTransferred(address indexed previousOperator, address indexed newOperator);
 
-    constructor() internal {
+    constructor() {
         _operator = _msgSender();
         emit OperatorTransferred(address(0), _operator);
     }
@@ -946,7 +948,7 @@ contract AraFiToken is ERC20Burnable, Operator {
     /**
      * @notice Constructs the ARA ERC-20 contract.
      */
-    constructor() public ERC20("AraFi Token", "ARA") {
+    constructor() ERC20("AraFi Token", "ARA") {
         _mint(msg.sender, 1000000 ether);
     }
 }

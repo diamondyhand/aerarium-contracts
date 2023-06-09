@@ -1,4 +1,6 @@
-pragma solidity >=0.6.0 <0.8.0;
+// SPDX-License-Identifier: MIT
+
+pragma solidity 0.8.18;
 
 /**
  * @dev Contract module that helps prevent reentrant calls to a function.
@@ -59,7 +61,7 @@ abstract contract ReentrancyGuard {
     }
 }
 
-pragma solidity >=0.4.0;
+pragma solidity 0.8.18;
 
 /**
  * @dev Implementation of the {IBEP20} interface.
@@ -670,7 +672,7 @@ library SafeBEP20 {
 
 abstract contract Context {
     function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
+        return payable(msg.sender);
     }
 
     function _msgData() internal view virtual returns (bytes memory) {
@@ -690,7 +692,7 @@ abstract contract Ownable is Context {
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
-    constructor() internal {
+    constructor() {
         address msgSender = _msgSender();
         _owner = msgSender;
         emit OwnershipTransferred(address(0), msgSender);
@@ -759,9 +761,9 @@ contract BEP20 is Context, IBEP20, Ownable {
      * All three of these values are immutable: they can only be set once during
      * construction.
      */
-    constructor(string memory name, string memory symbol) public {
-        _name = name;
-        _symbol = symbol;
+    constructor(string memory name_, string memory symbol_) {
+        _name = name_;
+        _symbol = symbol_;
         _decimals = 18;
     }
 
@@ -1255,7 +1257,7 @@ contract IMasterChef {
     function withdraw(uint256 _pid, uint256 _amount) external {}
 }
 
-pragma solidity >=0.6.12;
+pragma solidity 0.8.18;
 pragma experimental ABIEncoderV2;
 
 contract AraMasterChef is Ownable, ReentrancyGuard {
