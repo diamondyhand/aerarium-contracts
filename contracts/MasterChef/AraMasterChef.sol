@@ -85,160 +85,6 @@ pragma solidity >=0.4.0;
  * allowances. See {IBEP20-approve}.
  */
 
-library SafeMath {
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     *
-     * - Addition cannot overflow.
-     */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a, "SafeMath: addition overflow");
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        return sub(a, b, "SafeMath: subtraction overflow");
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        require(b <= a, errorMessage);
-        uint256 c = a - b;
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     *
-     * - Multiplication cannot overflow.
-     */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) {
-            return 0;
-        }
-
-        uint256 c = a * b;
-        require(c / a == b, "SafeMath: multiplication overflow");
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers. Reverts on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        return div(a, b, "SafeMath: division by zero");
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        require(b > 0, errorMessage);
-        uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * Reverts when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        return mod(a, b, "SafeMath: modulo by zero");
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * Reverts with custom message when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        require(b != 0, errorMessage);
-        return a % b;
-    }
-}
 
 interface IBEP20 {
     /**
@@ -556,7 +402,6 @@ library Address {
 }
 
 library SafeBEP20 {
-    using SafeMath for uint256;
     using Address for address;
 
     function safeTransfer(IBEP20 token, address to, uint256 value) internal {
@@ -609,7 +454,7 @@ library SafeBEP20 {
         address spender,
         uint256 value
     ) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).add(
+        uint256 newAllowance = token.allowance(address(this), spender) + (
             value
         );
         _callOptionalReturn(
@@ -627,10 +472,8 @@ library SafeBEP20 {
         address spender,
         uint256 value
     ) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(
-            value,
-            "SafeBEP20: decreased allowance below zero"
-        );
+        require(token.allowance(address(this), spender) >= value, "SafeBEP20: decreased allowance below zero");
+        uint256 newAllowance = token.allowance(address(this), spender) - value;
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(
@@ -737,7 +580,6 @@ abstract contract Ownable is Context {
 }
 
 contract BEP20 is Context, IBEP20, Ownable {
-    using SafeMath for uint256;
 
     mapping(address => uint256) private _balances;
 
@@ -865,14 +707,12 @@ contract BEP20 is Context, IBEP20, Ownable {
         address recipient,
         uint256 amount
     ) public override returns (bool) {
+        require(_allowances[sender][_msgSender()] >= amount, "BEP20: transfer amount exceeds allowance");
         _transfer(sender, recipient, amount);
         _approve(
             sender,
             _msgSender(),
-            _allowances[sender][_msgSender()].sub(
-                amount,
-                "BEP20: transfer amount exceeds allowance"
-            )
+            _allowances[sender][_msgSender()] - amount
         );
         return true;
     }
@@ -896,7 +736,7 @@ contract BEP20 is Context, IBEP20, Ownable {
         _approve(
             _msgSender(),
             spender,
-            _allowances[_msgSender()][spender].add(addedValue)
+            _allowances[_msgSender()][spender] + (addedValue)
         );
         return true;
     }
@@ -919,13 +759,12 @@ contract BEP20 is Context, IBEP20, Ownable {
         address spender,
         uint256 subtractedValue
     ) public returns (bool) {
+        require(_allowances[_msgSender()][spender] >= subtractedValue, 
+            "BEP20: decreased allowance below zero");
         _approve(
             _msgSender(),
             spender,
-            _allowances[_msgSender()][spender].sub(
-                subtractedValue,
-                "BEP20: decreased allowance below zero"
-            )
+            _allowances[_msgSender()][spender] - subtractedValue
         );
         return true;
     }
@@ -964,12 +803,9 @@ contract BEP20 is Context, IBEP20, Ownable {
     ) internal {
         require(sender != address(0), "BEP20: transfer from the zero address");
         require(recipient != address(0), "BEP20: transfer to the zero address");
-
-        _balances[sender] = _balances[sender].sub(
-            amount,
-            "BEP20: transfer amount exceeds balance"
-        );
-        _balances[recipient] = _balances[recipient].add(amount);
+        require(_balances[sender] >= amount, "BEP20: transfer amount exceeds balance");
+        _balances[sender] = _balances[sender] - amount;
+        _balances[recipient] = _balances[recipient] + (amount);
         emit Transfer(sender, recipient, amount);
     }
 
@@ -985,8 +821,8 @@ contract BEP20 is Context, IBEP20, Ownable {
     function _mint(address account, uint256 amount) internal {
         require(account != address(0), "BEP20: mint to the zero address");
 
-        _totalSupply = _totalSupply.add(amount);
-        _balances[account] = _balances[account].add(amount);
+        _totalSupply = _totalSupply + (amount);
+        _balances[account] = _balances[account] + (amount);
         emit Transfer(address(0), account, amount);
     }
 
@@ -1003,12 +839,9 @@ contract BEP20 is Context, IBEP20, Ownable {
      */
     function _burn(address account, uint256 amount) internal {
         require(account != address(0), "BEP20: burn from the zero address");
-
-        _balances[account] = _balances[account].sub(
-            amount,
-            "BEP20: burn amount exceeds balance"
-        );
-        _totalSupply = _totalSupply.sub(amount);
+        require(_balances[account] >= amount, "BEP20: burn amount exceeds balance");
+        _balances[account] = _balances[account] - amount;
+        _totalSupply = _totalSupply - (amount);
         emit Transfer(account, address(0), amount);
     }
 
@@ -1040,14 +873,12 @@ contract BEP20 is Context, IBEP20, Ownable {
      * See {_burn} and {_approve}.
      */
     function _burnFrom(address account, uint256 amount) internal {
+        require(_allowances[account][_msgSender()] >= amount, "BEP20: burn amount exceeds allowance");
         _burn(account, amount);
         _approve(
             account,
             _msgSender(),
-            _allowances[account][_msgSender()].sub(
-                amount,
-                "BEP20: burn amount exceeds allowance"
-            )
+            _allowances[account][_msgSender()] - amount
         );
     }
 }
@@ -1258,7 +1089,6 @@ pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
 contract AraMasterChef is Ownable, ReentrancyGuard {
-    using SafeMath for uint256;
     using SafeBEP20 for IBEP20;
     using BoringERC20 for IERC20;
 
@@ -1361,7 +1191,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
             massUpdatePools();
         }
         uint256 lastRewardBlock = block.timestamp;
-        totalAllocPoint = totalAllocPoint.add(_allocPoint);
+        totalAllocPoint = totalAllocPoint + (_allocPoint);
         strategies.push(_strategy);
         lpToken.push(IERC20(_lpToken));
         poolInfo.push(
@@ -1390,7 +1220,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         if (_withUpdate) {
             massUpdatePools();
         }
-        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(
+        totalAllocPoint = totalAllocPoint - (poolInfo[_pid].allocPoint) + (
             _allocPoint
         );
         poolInfo[_pid].allocPoint = _allocPoint;
@@ -1411,7 +1241,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         uint256 _from,
         uint256 _to
     ) public view returns (uint256) {
-        return _to.sub(_from).mul(BONUS_MULTIPLIER);
+        return (_to - _from) * (BONUS_MULTIPLIER);
     }
 
     function setMultiplier(uint256 _BONUS_MULTIPLIER) public onlyOwner {
@@ -1428,7 +1258,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         uint256 accAraPerShare = pool.accAraPerShare;
         uint256 lpSupply;
         if (address(strategies[_pid]) != address(0)) {
-            lpSupply = pool.lpToken.balanceOf(address(this)).add(
+            lpSupply = pool.lpToken.balanceOf(address(this)) + (
                 strategies[_pid].balanceOf()
             );
         } else {
@@ -1440,14 +1270,14 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
                 block.timestamp
             );
             uint256 araReward = multiplier
-                .mul(araPerBlock)
-                .mul(pool.allocPoint)
-                .div(totalAllocPoint);
-            accAraPerShare = accAraPerShare.add(
-                araReward.mul(1e12).div(lpSupply)
+                 * araPerBlock
+                 * pool.allocPoint
+                 / totalAllocPoint;
+            accAraPerShare = (accAraPerShare + 
+                araReward * 1e12 / lpSupply
             );
         }
-        return user.amount.mul(accAraPerShare).div(1e12).sub(user.rewardDebt);
+        return user.amount * (accAraPerShare) / (1e12) - (user.rewardDebt);
     }
 
     // Update reward variables for all pools. Be careful of gas spending!
@@ -1466,7 +1296,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         }
         uint256 lpSupply;
         if (address(strategies[_pid]) != address(0)) {
-            lpSupply = pool.lpToken.balanceOf(address(this)).add(
+            lpSupply = pool.lpToken.balanceOf(address(this)) + (
                 strategies[_pid].balanceOf()
             );
         } else {
@@ -1481,13 +1311,13 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
             block.timestamp
         );
         uint256 araReward = multiplier
-            .mul(araPerBlock)
-            .mul(pool.allocPoint)
-            .div(totalAllocPoint);
-        ara.safeTransfer(devaddr, araReward.div(12));
+             * (araPerBlock)
+             * (pool.allocPoint)
+             / (totalAllocPoint);
+        ara.safeTransfer(devaddr, araReward / (12));
         ara.safeTransfer(address(this), araReward);
-        pool.accAraPerShare = pool.accAraPerShare.add(
-            araReward.mul(1e12).div(lpSupply)
+        pool.accAraPerShare = pool.accAraPerShare +
+            (araReward * (1e12) / (lpSupply)
         );
         pool.lastRewardBlock = block.timestamp;
     }
@@ -1500,9 +1330,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         if (user.amount > 0) {
             uint256 pending = user
                 .amount
-                .mul(pool.accAraPerShare)
-                .div(1e12)
-                .sub(user.rewardDebt);
+                 * (pool.accAraPerShare)
+                 / 1e12
+                 - (user.rewardDebt);
             if (pending > 0) {
                 safeAraTransfer(msg.sender, pending);
             }
@@ -1514,11 +1344,11 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
                 _amount
             );
             if (pool.depositFeeBP > 0) {
-                uint256 depositFee = _amount.mul(pool.depositFeeBP).div(10000);
+                uint256 depositFee = _amount * (pool.depositFeeBP) / (10000);
                 pool.lpToken.safeTransfer(feeAddress, depositFee);
-                user.amount = user.amount.add(_amount).sub(depositFee);
+                user.amount = (user.amount + _amount) - depositFee;
             } else {
-                user.amount = user.amount.add(_amount);
+                user.amount = user.amount + _amount;
             }
             IStrategy _strategy = strategies[_pid];
             if (address(_strategy) != address(0)) {
@@ -1527,7 +1357,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
                 _strategy.deposit();
             }
         }
-        user.rewardDebt = user.amount.mul(pool.accAraPerShare).div(1e12);
+        user.rewardDebt = user.amount * (pool.accAraPerShare) / (1e12);
         emit Deposit(msg.sender, _pid, _amount);
     }
 
@@ -1539,22 +1369,22 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         uint256 balance = pool.lpToken.balanceOf(address(this));
         IStrategy strategy = strategies[_pid];
         updatePool(_pid);
-        uint256 pending = user.amount.mul(pool.accAraPerShare).div(1e12).sub(
+        uint256 pending = user.amount * (pool.accAraPerShare) / (1e12) - (
             user.rewardDebt
         );
         if (pending > 0) {
             safeAraTransfer(msg.sender, pending);
         }
         if (_amount > 0) {
-            user.amount = user.amount.sub(_amount);
+            user.amount = user.amount - (_amount);
             if (_amount > balance) {
-                uint256 missing = _amount.sub(balance);
+                uint256 missing = _amount - (balance);
                 uint256 withdrawn = strategy.withdraw(missing);
-                _amount = balance.add(withdrawn);
+                _amount = balance + (withdrawn);
             }
             pool.lpToken.safeTransfer(address(msg.sender), _amount);
         }
-        user.rewardDebt = user.amount.mul(pool.accAraPerShare).div(1e12);
+        user.rewardDebt = user.amount * (pool.accAraPerShare) / (1e12);
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
@@ -1568,9 +1398,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         uint256 balance = pool.lpToken.balanceOf(address(this));
         IStrategy strategy = strategies[_pid];
         if (amount > balance) {
-            uint256 missing = amount.sub(balance);
+            uint256 missing = amount - (balance);
             uint256 withdrawn = strategy.withdraw(missing);
-            amount = balance.add(withdrawn);
+            amount = balance + (withdrawn);
         }
         pool.lpToken.safeTransfer(address(msg.sender), amount);
         emit EmergencyWithdraw(msg.sender, _pid, amount);
@@ -1626,7 +1456,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
             _strategy.deposit();
 
             uint256 _strategyBalanceAfter = _strategy.balanceOf();
-            uint256 _strategyBalanceDiff = _strategyBalanceAfter.sub(
+            uint256 _strategyBalanceDiff = _strategyBalanceAfter - (
                 _strategyBalanceBefore
             );
 
