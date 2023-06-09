@@ -1147,7 +1147,7 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     function harvestAndDistributeAnotherToken(
         uint256 _pid,
         uint256 _tokenId
-    ) public {
+    ) external {
         if(_pid >= totalPidsAnotherToken) {
             revert InvalidPoolId();
         }
@@ -1181,7 +1181,7 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function emergencyWithdraw(uint256 _pid, uint256 _tokenId) public {
+    function emergencyWithdraw(uint256 _pid, uint256 _tokenId) external {
         if(_pid >= totalPidsAnotherToken) {
             revert InvalidPoolId();
         }
@@ -1223,7 +1223,7 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         address _tokenReward,
         uint256 _anotherTokenPerBlock,
         uint256 _allocPoint
-    ) public onlyOwner {
+    ) external onlyOwner {
         // Add a new pool with the specified token reward, block reward, closed status, allocation point and current timestamp to the poolInfoAnotherToken array
         poolInfoAnotherToken.push(
             PoolInfoAnotherToken({
@@ -1251,7 +1251,7 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         address _tokenReward,
         uint256 _allocPoint,
         uint256 _anotherTokenPerBlock
-    ) public onlyOwner {
+    ) external onlyOwner {
         // Update the allocation point, token reward, block reward and closed status of the specified AnotherToken pool
         PoolInfoAnotherToken storage poolAnotherToken = poolInfoAnotherToken[
             _pid

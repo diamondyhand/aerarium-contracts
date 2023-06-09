@@ -1179,7 +1179,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         uint16 _depositFeeBP,
         IStrategy _strategy,
         bool _withUpdate
-    ) public onlyOwner {
+    ) external onlyOwner {
         if(_lpToken == address(0) || address(_strategy) == address(0)) {
             revert ZeroAddress();
         }
@@ -1212,7 +1212,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         uint16 _depositFeeBP,
         IStrategy _strategy,
         bool _withUpdate
-    ) public onlyOwner {
+    ) external onlyOwner {
         require(
             _depositFeeBP <= 10000,
             "set: invalid deposit fee basis points"
@@ -1323,7 +1323,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     }
 
     // Deposit LP tokens to MasterChef for ara allocation.
-    function deposit(uint256 _pid, uint256 _amount) public nonReentrant {
+    function deposit(uint256 _pid, uint256 _amount) external nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
@@ -1362,7 +1362,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     }
 
     // Withdraw LP tokens from MasterChef.
-    function withdraw(uint256 _pid, uint256 _amount) public nonReentrant {
+    function withdraw(uint256 _pid, uint256 _amount) external nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
@@ -1389,7 +1389,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function emergencyWithdraw(uint256 _pid) public nonReentrant {
+    function emergencyWithdraw(uint256 _pid) external nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         uint256 amount = user.amount;
@@ -1417,20 +1417,20 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     }
 
     // Update dev address by the previous dev.
-    function dev(address _devaddr) public {
+    function dev(address _devaddr) external {
         require(msg.sender == devaddr, "dev: wut?");
         devaddr = _devaddr;
         emit SetDevAddress(msg.sender, _devaddr);
     }
 
-    function setFeeAddress(address _feeAddress) public {
+    function setFeeAddress(address _feeAddress) external {
         require(msg.sender == feeAddress, "setFeeAddress: FORBIDDEN");
         feeAddress = _feeAddress;
         emit SetFeeAddress(msg.sender, _feeAddress);
     }
 
     //Pancake has to add hidden dummy pools inorder to alter the emission, here we make it simple and transparent to all.
-    function updateEmissionRate(uint256 _araPerBlock) public onlyOwner {
+    function updateEmissionRate(uint256 _araPerBlock) external onlyOwner {
         massUpdatePools();
         araPerBlock = _araPerBlock;
         emit UpdateEmissionRate(msg.sender, _araPerBlock);

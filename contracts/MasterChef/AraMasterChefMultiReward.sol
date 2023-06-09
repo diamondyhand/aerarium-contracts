@@ -1148,7 +1148,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         IStrategy _strategy,
         bool _withUpdate,
         address[] memory _rewardTokens
-    ) public onlyOwner {
+    ) external onlyOwner {
         if(address(_lpToken) == address(0)) {
             revert ZeroAddress();
         }
@@ -1199,7 +1199,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         IStrategy _strategy,
         bool _withUpdate,
         address[] memory _rewardTokens
-    ) public onlyOwner {
+    ) external onlyOwner {
         require(
             _depositFeeBP <= 10000,
             "set: invalid deposit fee basis points"
@@ -1239,7 +1239,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         uint256 _pid,
         address _rewardToken,
         uint256 _rewardPerBlock
-    ) public onlyOwner {
+    ) external onlyOwner {
         require(
             _rewardToken != address(0),
             "addReward: invalid reward token address"
@@ -1257,7 +1257,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         uint256 _pid,
         address _rewardToken,
         uint256 _rewardPerBlock
-    ) public onlyOwner {
+    ) external onlyOwner {
         require(
             _rewardToken != address(0),
             "updateReward: invalid reward token address"
@@ -1359,7 +1359,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         pool.lastRewardBlock = block.timestamp;
     }
 
-    function deposit(uint256 _pid, uint256 _amount) public nonReentrant {
+    function deposit(uint256 _pid, uint256 _amount) external nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
@@ -1407,7 +1407,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     }
 
     // Withdraw LP tokens from MultiRewardMasterChef.
-    function withdraw(uint256 _pid, uint256 _amount) public {
+    function withdraw(uint256 _pid, uint256 _amount) external {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
@@ -1477,7 +1477,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         IERC20(_rewardToken).safeTransfer(_to, rewardBal);
     }
 
-    function setFeeAddress(address _feeAddress) public {
+    function setFeeAddress(address _feeAddress) external {
         require(msg.sender == feeAddress, "setFeeAddress: FORBIDDEN");
         feeAddress = _feeAddress;
     }
