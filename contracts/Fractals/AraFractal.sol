@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 contract ve is IERC721, IERC721Metadata, Ownable {
+    using SafeERC20 for IERC20;
     enum DepositType {
         DEPOSIT_FOR_TYPE,
         CREATE_LOCK_TYPE,
@@ -119,6 +120,12 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         _;
         _entered_state = _not_entered;
     }
+
+    error ValueShouldEqual();
+    error NotCreateFractals();
+    error QueryNonexistentToken();
+    error NotOwnerNorApproved();
+    error FailedTransferNewTokens();
 
     /// @notice Contract constructor
     /// @param token_addr `ERC20CRV` token address
@@ -571,11 +578,13 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _value Amount to deposit
     /// @param _to Address to deposit
     function _create_lock(uint _value, address _to) internal returns (uint) {
-        require(
-            _value == amountTobeLocked,
-            "The value must equal to amountTobeLocked"
-        );
-        require(canCreateFractals == true, "canCreateFractals must be true");
+        if(_value != amountTobeLocked) {
+            revert ValueShouldEqual();
+        }
+        if(!canCreateFractals){
+            revert NotCreateFractals();
+        }
+            
         require(_value > 0); // dev: need non-zero value
         ++tSupply;
         ++tokenId;
@@ -664,10 +673,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @dev Returns current token URI metadata
     /// @param _tokenId Token ID to fetch URI for.
     function tokenURI(uint _tokenId) external view returns (string memory) {
-        require(
-            idToOwner[_tokenId] != address(0),
-            "Query for nonexistent token"
-        );
+        if(idToOwner[_tokenId] == address(0)){
+            revert QueryNonexistentToken();
+        }
         LockedBalance memory _locked = locked[_tokenId];
         return
             _tokenURI(
@@ -910,10 +918,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     }
 
     function _burn(uint _tokenId) internal {
-        require(
-            _isApprovedOrOwner(msg.sender, _tokenId),
-            "caller is not owner nor approved"
-        );
+        if(!_isApprovedOrOwner(msg.sender, _tokenId))
+        {
+            revert NotOwnerNorApproved();
+        }
 
         address owner = ownerOf(_tokenId);
 
@@ -925,9 +933,6 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     }
 
     function withdrawUSDC(address _newToken, uint256 _amount) public onlyOwner {
-        require(
-            IERC20(_newToken).safeTransfer(msg.sender, _amount),
-            "Failed to transfer new tokens."
-        );
+        IERC20(_newToken).safeTransfer(msg.sender, _amount);
     }
 }

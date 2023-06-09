@@ -1012,13 +1012,17 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256 amount
     );
 
+    error AraZeroAddress();
+    error NotOwnerOfveARA();
+    error InvalidPoolId();
+    error InsufficientRewardtokens();
+
     constructor(
         IERC721 _araFractalV2 // araFractalV2 ERC721 token
     ) {
-        require(
-            address(_araFractalV2) != address(0),
-            "invalid araFractalV2's address"
-        );
+        if(address(_araFractalV2) == address(0)){
+            revert AraZeroAddress();
+        }
         araFractalV2 = _araFractalV2;
     }
 
@@ -1026,10 +1030,9 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     function depositToChef(uint256 _pid, uint256 _tokenId) external {
         // Check if msg.sender is the owner of the veARA
         address ownerOfTokenId = IERC721(araFractalV2).ownerOf(_tokenId);
-        require(
-            ownerOfTokenId == msg.sender,
-            "You are not the owner of this veARA"
-        );
+        if(ownerOfTokenId != msg.sender) {
+            revert NotOwnerOfveARA();
+        }
 
         // AnotherToken Rewards attributes
         PoolInfoAnotherToken memory poolAnotherToken = updatePoolAnotherToken(
@@ -1071,7 +1074,9 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256 _pid,
         uint256 _amount
     ) external onlyOwner {
-        require(_pid < totalPidsAnotherToken, "invalid pool id");
+        if(_pid >= totalPidsAnotherToken) {
+            revert InvalidPoolId();
+        }
         PoolInfoAnotherToken storage poolAnotherToken = poolInfoAnotherToken[
             _pid
         ];
@@ -1343,10 +1348,9 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256 anotherTokenBalance = IERC20(pool.tokenReward).balanceOf(
             address(this)
         );
-        require(
-            anotherTokenBalance >= _amount && _amount > 0,
-            "Insufficient Reward tokens available for transfer."
-        );
+        if(!(anotherTokenBalance >= _amount && _amount > 0)) {
+            revert InsufficientRewardtokens();
+        }
         IERC20(pool.tokenReward).safeTransfer(_to, anotherTokenBalance);
     }
 }

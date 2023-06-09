@@ -977,6 +977,8 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
     event KickIncentiveSet(uint256 rate, uint256 delay);
     event Shutdown();
 
+    error RewardError(string);
+    error KickIncentiveError(string);
     /***************************************
                     CONSTRUCTOR
     ****************************************/
@@ -1062,11 +1064,13 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
 
     // Add a new reward token to be distributed to stakers
     function addReward(address _rewardsToken) external onlyOwner {
-        require(
-            rewardData[_rewardsToken].lastUpdateTime == 0,
-            "Reward already exists"
-        );
-        require(rewardTokens.length < 5, "Max rewards length");
+        if(rewardData[_rewardsToken].lastUpdateTime > 0){
+            revert RewardError("Reward already exists");
+        }
+
+        if(rewardTokens.length >= 5){
+            revert RewardError("Max rewards length");
+        }
 
         rewardTokens.push(_rewardsToken);
         rewardData[_rewardsToken].lastUpdateTime = uint32(block.timestamp);
@@ -1078,8 +1082,13 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         uint256 _rate,
         uint256 _delay
     ) external onlyOwner {
-        require(_rate <= 500, "over max rate"); //max 5% per epoch
-        require(_delay >= 2, "min delay"); //minimum 2 epochs of grace
+        if(_rate > 500) {
+            revert KickIncentiveError("over max rate");
+        }
+        if(_delay < 2) //minimum 2 epochs of grace
+        {
+            revert KickIncentiveError("min delay");
+        }
         kickRewardPerEpoch = _rate;
         kickRewardEpochDelay = _delay;
 

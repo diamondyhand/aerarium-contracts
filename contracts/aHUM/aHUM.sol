@@ -2367,6 +2367,9 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
         uint256 amount
     );
 
+    error ZeroAddress();
+    error InsufficientRewardtokens();
+
     constructor(
         IERC20 _hum, // veARA ERC721 token
         IERC20 _ara, // ARA ERC20 token
@@ -2374,9 +2377,12 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
         IMasterChef _chef, // MasterChef contract for controlling distribution
         uint256 _farmPid
     ) {
-        require(address(_hum) != address(0), "invalid veARA's address");
-        require(address(_ara) != address(0), "invalid ara's address");
-        require(address(_chef) != address(0), "invalid master chef's address");
+        if(
+            address(_hum) == address(0) 
+            || address(_ara) == address(0) 
+            || address(_chef) == address(0)) {
+            revert ZeroAddress();
+        }
         hum = _hum;
         vuhum = _vuhum;
         ara = _ara;
@@ -2545,10 +2551,9 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
 
     function safeARATransfer(address _to, uint256 _amount) internal {
         uint256 araBalance = ara.balanceOf(address(this));
-        require(
-            araBalance >= _amount && _amount > 0,
-            "Insufficient Reward tokens available for transfer."
-        );
+        if(!(araBalance >= _amount && _amount > 0)) {
+            revert InsufficientRewardtokens();
+        }
         ara.safeTransfer(_to, araBalance);
     }
 
