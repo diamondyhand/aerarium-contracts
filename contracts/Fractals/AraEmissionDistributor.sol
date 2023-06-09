@@ -1089,6 +1089,9 @@ contract AraEmissionDistributor is AccessControl, Ownable {
 
     function withdrawAndDistribute(uint256 _pid, uint256 _tokenId) external {
         // AnotherToken Rewards attributes
+        if(_pid >= totalPidsAnotherToken) {
+            revert InvalidPoolId();
+        }
         PoolInfoAnotherToken memory poolAnotherToken = updatePoolAnotherToken(
             _pid
         );
@@ -1145,6 +1148,9 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256 _pid,
         uint256 _tokenId
     ) public {
+        if(_pid >= totalPidsAnotherToken) {
+            revert InvalidPoolId();
+        }
         // Get the current pool information for the specified pid
         PoolInfoAnotherToken memory poolAnotherToken = updatePoolAnotherToken(
             _pid
@@ -1176,6 +1182,9 @@ contract AraEmissionDistributor is AccessControl, Ownable {
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
     function emergencyWithdraw(uint256 _pid, uint256 _tokenId) public {
+        if(_pid >= totalPidsAnotherToken) {
+            revert InvalidPoolId();
+        }
         // Get the current user's information for the specified pid and tokenId
         UserInfoAnotherToken storage userAnotherToken = userInfoAnotherToken[
             _pid

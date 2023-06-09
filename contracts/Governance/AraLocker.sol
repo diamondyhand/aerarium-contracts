@@ -979,6 +979,7 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
 
     error RewardError(string);
     error KickIncentiveError(string);
+    error ZeroAddress();
     /***************************************
                     CONSTRUCTOR
     ****************************************/
@@ -993,6 +994,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         string memory _symbolArg,
         address _stakingToken
     ) Ownable() {
+        if(_stakingToken == address(0)) {
+            revert ZeroAddress();
+        }
         _name = _nameArg;
         _symbol = _symbolArg;
         _decimals = 18;

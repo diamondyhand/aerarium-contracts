@@ -1321,12 +1321,17 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     event SetDevAddress(address indexed user, address indexed newAddress);
     event UpdateEmissionRate(address indexed user, uint256 araPerBlock);
 
+    error ZeroAddress();
+
     constructor(
         IERC20 _ara,
         address _devaddr,
         address _feeAddress,
         uint256 _araPerBlock
     ) {
+        if(address(_ara) == address(0) || _devaddr == address(0) || _feeAddress == address(0)){
+            revert ZeroAddress();
+        }
         ara = _ara;
         devaddr = _devaddr;
         feeAddress = _feeAddress;
@@ -1345,6 +1350,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         IStrategy _strategy,
         bool _withUpdate
     ) public onlyOwner {
+        if(_lpToken == address(0) || address(_strategy) == address(0)) {
+            revert ZeroAddress();
+        }
         require(
             _depositFeeBP <= 10000,
             "add: invalid deposit fee basis points"

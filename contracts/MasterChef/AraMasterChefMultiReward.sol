@@ -1326,7 +1326,12 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         uint256 rewardPerBlock
     );
 
+    error ZeroAddress();
+
     constructor(address _feeAddress) {
+        if(_feeAddress == address(0)) {
+            revert ZeroAddress();
+        }
         feeAddress = _feeAddress;
     }
 
@@ -1342,6 +1347,12 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         bool _withUpdate,
         address[] memory _rewardTokens
     ) public onlyOwner {
+        if(address(_lpToken) == address(0)) {
+            revert ZeroAddress();
+        }
+        if(address(_strategy) == address(0)) {
+            revert ZeroAddress();
+        }
         require(
             _depositFeeBP <= 10000,
             "add: invalid deposit fee basis points"
