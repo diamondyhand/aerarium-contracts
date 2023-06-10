@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.7;
+pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 contract ve is IERC721, IERC721Metadata, Ownable {
+    using SafeERC20 for IERC20;
     enum DepositType {
         DEPOSIT_FOR_TYPE,
         CREATE_LOCK_TYPE,
@@ -56,9 +57,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
     uint public epoch;
     mapping(uint => Point) public point_history; // epoch -> unsigned point
-    mapping(uint => Point[1000000000]) public user_point_history; // user -> Point[user_epoch]
+    mapping(uint => Point[1000000000]) public token_point_history; // tokenId -> Point[token_epoch]
 
-    mapping(uint => uint) public user_point_epoch;
+    mapping(uint => uint) public token_point_epoch;
     mapping(uint => int128) public slope_changes; // time -> signed slope change
 
     mapping(uint => uint) public attachments;
@@ -120,6 +121,12 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         _entered_state = _not_entered;
     }
 
+    error ValueShouldEqual();
+    error NotCreateFractals();
+    error QueryNonexistentToken();
+    error NotOwnerNorApproved();
+    error FailedTransferNewTokens();
+
     /// @notice Contract constructor
     /// @param token_addr `ERC20CRV` token address
     constructor(
@@ -166,20 +173,20 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @notice Get the most recently recorded rate of voting power decrease for `_tokenId`
     /// @param _tokenId token of the NFT
     /// @return Value of the slope
-    function get_last_user_slope(uint _tokenId) external view returns (int128) {
-        uint uepoch = user_point_epoch[_tokenId];
-        return user_point_history[_tokenId][uepoch].slope;
+    function get_last_token_slope(uint _tokenId) external view returns (int128) {
+        uint uepoch = token_point_epoch[_tokenId];
+        return token_point_history[_tokenId][uepoch].slope;
     }
 
     /// @notice Get the timestamp for checkpoint `_idx` for `_tokenId`
     /// @param _tokenId token of the NFT
     /// @param _idx User epoch number
     /// @return Epoch time of the checkpoint
-    function user_point_history__ts(
+    function token_point_history__ts(
         uint _tokenId,
         uint _idx
     ) external view returns (uint) {
-        return user_point_history[_tokenId][_idx].ts;
+        return token_point_history[_tokenId][_idx].ts;
     }
 
     /// @notice Get timestamp when `_tokenId`'s lock finishes
@@ -571,11 +578,13 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _value Amount to deposit
     /// @param _to Address to deposit
     function _create_lock(uint _value, address _to) internal returns (uint) {
-        require(
-            _value == amountTobeLocked,
-            "The value must equal to amountTobeLocked"
-        );
-        require(canCreateFractals == true, "canCreateFractals must be true");
+        if(_value != amountTobeLocked) {
+            revert ValueShouldEqual();
+        }
+        if(!canCreateFractals){
+            revert NotCreateFractals();
+        }
+            
         require(_value > 0); // dev: need non-zero value
         ++tSupply;
         ++tokenId;
@@ -646,11 +655,11 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         uint _tokenId,
         uint _t
     ) internal view returns (uint) {
-        uint _epoch = user_point_epoch[_tokenId];
+        uint _epoch = token_point_epoch[_tokenId];
         if (_epoch == 0) {
             return 0;
         } else {
-            Point memory last_point = user_point_history[_tokenId][_epoch];
+            Point memory last_point = token_point_history[_tokenId][_epoch];
             last_point.bias -=
                 last_point.slope *
                 int128(int256(_t) - int256(last_point.ts));
@@ -664,10 +673,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @dev Returns current token URI metadata
     /// @param _tokenId Token ID to fetch URI for.
     function tokenURI(uint _tokenId) external view returns (string memory) {
-        require(
-            idToOwner[_tokenId] != address(0),
-            "Query for nonexistent token"
-        );
+        if(idToOwner[_tokenId] == address(0)){
+            revert QueryNonexistentToken();
+        }
         LockedBalance memory _locked = locked[_tokenId];
         return
             _tokenURI(
@@ -705,21 +713,21 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
         // Binary search
         uint _min = 0;
-        uint _max = user_point_epoch[_tokenId];
+        uint _max = token_point_epoch[_tokenId];
         for (uint i = 0; i < 128; ++i) {
             // Will be always enough for 128-bit numbers
             if (_min >= _max) {
                 break;
             }
             uint _mid = (_min + _max + 1) / 2;
-            if (user_point_history[_tokenId][_mid].blk <= _block) {
+            if (token_point_history[_tokenId][_mid].blk <= _block) {
                 _min = _mid;
             } else {
                 _max = _mid - 1;
             }
         }
 
-        Point memory upoint = user_point_history[_tokenId][_min];
+        Point memory upoint = token_point_history[_tokenId][_min];
 
         uint max_epoch = epoch;
         uint _epoch = _find_block_epoch(_block, max_epoch);
@@ -910,10 +918,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     }
 
     function _burn(uint _tokenId) internal {
-        require(
-            _isApprovedOrOwner(msg.sender, _tokenId),
-            "caller is not owner nor approved"
-        );
+        if(!_isApprovedOrOwner(msg.sender, _tokenId))
+        {
+            revert NotOwnerNorApproved();
+        }
 
         address owner = ownerOf(_tokenId);
 
@@ -925,9 +933,6 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     }
 
     function withdrawUSDC(address _newToken, uint256 _amount) public onlyOwner {
-        require(
-            IERC20(_newToken).safeTransfer(msg.sender, _amount),
-            "Failed to transfer new tokens."
-        );
+        IERC20(_newToken).safeTransfer(msg.sender, _amount);
     }
 }

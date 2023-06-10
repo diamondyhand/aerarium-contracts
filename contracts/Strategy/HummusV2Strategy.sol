@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 /**
  * @dev Interface of the MasterHummusV2
  */
@@ -61,7 +63,7 @@ interface IMasterHummusV2 {
     function updateFactor(address _user, uint256 _newVeHumBalance) external;
 }
 
-pragma solidity >=0.6.2 <0.8.0;
+pragma solidity 0.8.18;
 
 /**
  * @dev Collection of functions related to the address type
@@ -312,247 +314,7 @@ library Address {
     }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
-
-/**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
- *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
- *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
- */
-library SafeMath {
-    /**
-     * @dev Returns the addition of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryAdd(
-        uint256 a,
-        uint256 b
-    ) internal pure returns (bool, uint256) {
-        uint256 c = a + b;
-        if (c < a) return (false, 0);
-        return (true, c);
-    }
-
-    /**
-     * @dev Returns the substraction of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function trySub(
-        uint256 a,
-        uint256 b
-    ) internal pure returns (bool, uint256) {
-        if (b > a) return (false, 0);
-        return (true, a - b);
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMul(
-        uint256 a,
-        uint256 b
-    ) internal pure returns (bool, uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) return (true, 0);
-        uint256 c = a * b;
-        if (c / a != b) return (false, 0);
-        return (true, c);
-    }
-
-    /**
-     * @dev Returns the division of two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryDiv(
-        uint256 a,
-        uint256 b
-    ) internal pure returns (bool, uint256) {
-        if (b == 0) return (false, 0);
-        return (true, a / b);
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMod(
-        uint256 a,
-        uint256 b
-    ) internal pure returns (bool, uint256) {
-        if (b == 0) return (false, 0);
-        return (true, a % b);
-    }
-
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     *
-     * - Addition cannot overflow.
-     */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a, "SafeMath: addition overflow");
-        return c;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a, "SafeMath: subtraction overflow");
-        return a - b;
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     *
-     * - Multiplication cannot overflow.
-     */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        if (a == 0) return 0;
-        uint256 c = a * b;
-        require(c / a == b, "SafeMath: multiplication overflow");
-        return c;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b > 0, "SafeMath: division by zero");
-        return a / b;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b > 0, "SafeMath: modulo by zero");
-        return a % b;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
-     * overflow (when the result is negative).
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {trySub}.
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        require(b <= a, errorMessage);
-        return a - b;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting with custom message on
-     * division by zero. The result is rounded towards zero.
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {tryDiv}.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        require(b > 0, errorMessage);
-        return a / b;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting with custom message when dividing by zero.
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {tryMod}.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        require(b > 0, errorMessage);
-        return a % b;
-    }
-}
-
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity 0.8.18;
 
 /**
  * @title SafeERC20
@@ -564,7 +326,6 @@ pragma solidity >=0.6.0 <0.8.0;
  * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
  */
 library SafeERC20 {
-    using SafeMath for uint256;
     using Address for address;
 
     function safeTransfer(IERC20 token, address to, uint256 value) internal {
@@ -617,7 +378,7 @@ library SafeERC20 {
         address spender,
         uint256 value
     ) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).add(
+        uint256 newAllowance = token.allowance(address(this), spender) + (
             value
         );
         _callOptionalReturn(
@@ -635,10 +396,8 @@ library SafeERC20 {
         address spender,
         uint256 value
     ) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(
-            value,
-            "SafeERC20: decreased allowance below zero"
-        );
+        require(token.allowance(address(this), spender) >= value, "SafeERC20: decreased allowance below zero");
+        uint256 newAllowance = token.allowance(address(this), spender) - value;
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(
@@ -675,7 +434,7 @@ library SafeERC20 {
     }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity 0.8.18;
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
@@ -765,13 +524,13 @@ interface IERC20 {
     );
 }
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.18;
 
 interface ILiquidDepositor {
     function treasury() external view returns (address);
 }
 
-pragma solidity ^0.6.7;
+pragma solidity 0.8.18;
 
 interface IMasterChef {
     function BONUS_MULTIPLIER() external view returns (uint256);
@@ -862,12 +621,11 @@ interface IMasterChef {
     function withdraw(uint256 _pid, uint256 _amount) external;
 }
 
-pragma solidity ^0.6.7;
+pragma solidity 0.8.18;
 
 abstract contract StrategyBase {
     using SafeERC20 for IERC20;
     using Address for address;
-    using SafeMath for uint256;
 
     // Tokens
     address public want;
@@ -878,7 +636,7 @@ abstract contract StrategyBase {
 
     mapping(address => bool) public harvesters;
 
-    constructor(address _want, address _depositor) public {
+    constructor(address _want, address _depositor) {
         require(_want != address(0));
         require(_depositor != address(0));
 
@@ -907,7 +665,7 @@ abstract contract StrategyBase {
     function balanceOfPool() public view virtual returns (uint256);
 
     function balanceOf() public view returns (uint256) {
-        return balanceOfWant().add(balanceOfPool());
+        return balanceOfWant() + (balanceOfPool());
     }
 
     // **** Setters **** //
@@ -955,8 +713,8 @@ abstract contract StrategyBase {
         require(msg.sender == depositor, "!depositor");
         uint256 _balance = IERC20(want).balanceOf(address(this));
         if (_balance < _amount) {
-            _amount = _withdrawSome(_amount.sub(_balance));
-            _amount = _amount.add(_balance);
+            _amount = _withdrawSome(_amount - (_balance));
+            _amount = _amount + (_balance);
         }
 
         IERC20(want).transfer(depositor, _amount);
@@ -983,7 +741,7 @@ abstract contract StrategyBase {
     function harvest(uint256[] memory pids) public virtual;
 }
 
-pragma solidity ^0.6.7;
+pragma solidity 0.8.18;
 
 abstract contract StrategyGeneralMasterChefBase is StrategyBase {
     // Token addresses
@@ -1003,7 +761,7 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
         address _depositor,
         address _bonusToken,
         address _devAddress
-    ) public StrategyBase(_lp, _depositor) {
+    ) StrategyBase(_lp, _depositor) {
         poolId = _poolId;
         rewardToken = _rewardToken;
         masterchef = _masterchef;
@@ -1066,7 +824,7 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
     }
 }
 
-pragma solidity ^0.6.7;
+pragma solidity 0.8.18;
 
 contract StrategyHummusFarm is StrategyGeneralMasterChefBase {
     // Token addresses
@@ -1080,7 +838,6 @@ contract StrategyHummusFarm is StrategyGeneralMasterChefBase {
         address bonusToken,
         address devAddress
     )
-        public
         StrategyGeneralMasterChefBase(
             hum,
             masterChef,
