@@ -2327,9 +2327,9 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
 
     uint256 public araPerBlock;
-    uint256 public totalAllocPoint = 0;
+    uint256 public totalAllocPoint;
 
-    uint256 public totalAmountOfSupplyStaked = 0; // total ARA locked in pools
+    uint256 public totalAmountOfSupplyStaked; // total ARA locked in pools
 
     uint256 private constant ACC_ARA_PRECISION = 1e12; // Precision for accumulating ARA
     uint256 public constant POOL_PERCENTAGE = 0.876e3; // Percentage of ARA allocated to pools

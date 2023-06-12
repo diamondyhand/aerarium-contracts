@@ -950,16 +950,16 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     }
     /****************************************************************/
 
-    uint256 public totalPidsAnotherToken = 0; // total number of another token pools
+    uint256 public totalPidsAnotherToken; // total number of another token pools
     mapping(uint256 => PoolInfoAnotherToken) public poolInfoAnotherToken; // an array to store information of all pools of another token
     mapping(uint256 => mapping(address => mapping(uint256 => UserInfoAnotherToken)))
         public userInfoAnotherToken; // mapping form poolId => user Address => User Info
 
-    uint256 public tokenInfoCount = 0;
-    mapping(uint256 => TokenInfo) public tokenInfo;
+    uint256 public tokenInfoCount;
+    mapping(uint256 => TokenInfo) public tokenInfo; // mapping form index => tokenInfo
 
 
-    uint256 public totalAnotherAllocPoint = 0;
+    uint256 public totalAnotherAllocPoint;
 
     mapping(address => uint256[]) public tokenIdsByUser;
 
