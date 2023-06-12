@@ -950,14 +950,16 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     }
     /****************************************************************/
 
-    PoolInfoAnotherToken[] public poolInfoAnotherToken; // an array to store information of all pools of another token
-    uint256 public totalPidsAnotherToken = 0; // total number of another token pools
+    uint256 public totalPidsAnotherToken; // total number of another token pools
+    mapping(uint256 => PoolInfoAnotherToken) public poolInfoAnotherToken; // an array to store information of all pools of another token
     mapping(uint256 => mapping(address => mapping(uint256 => UserInfoAnotherToken)))
         public userInfoAnotherToken; // mapping form poolId => user Address => User Info
 
-    TokenInfo[] public tokenInfo; // mapping form poolId => user Address => User Info
+    uint256 public tokenInfoCount;
+    mapping(uint256 => TokenInfo) public tokenInfo; // mapping form index => tokenInfo
 
-    uint256 public totalAnotherAllocPoint = 0;
+
+    uint256 public totalAnotherAllocPoint;
 
     mapping(address => uint256[]) public tokenIdsByUser;
 
@@ -1001,7 +1003,6 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     event LogUpdatePoolAnotherToken(
         uint256 indexed pid,
         uint256 lastRewardBlock,
-        uint256 totalAmountLockedAra,
         uint256 accARAPerShare
     );
 
@@ -1028,6 +1029,9 @@ contract AraEmissionDistributor is AccessControl, Ownable {
 
     // Function to deposit veARA token to the contract and receive rewards
     function depositToChef(uint256 _pid, uint256 _tokenId) external {
+        if(_pid >= totalPidsAnotherToken) {
+            revert InvalidPoolId();
+        }
         // Check if msg.sender is the owner of the veARA
         address ownerOfTokenId = IERC721(araFractalV2).ownerOf(_tokenId);
         if(ownerOfTokenId != msg.sender) {
@@ -1063,7 +1067,8 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         /*******************************************************************/
 
         // Push the tokenInfo to the tokenInfo array
-        tokenInfo.push(TokenInfo({user: msg.sender, numberNFT: _tokenId}));
+        tokenInfo[tokenInfoCount] = TokenInfo({user: msg.sender, numberNFT: _tokenId});
+        tokenInfoCount ++;
 
         // Events
         // Emit events for deposit
@@ -1085,6 +1090,7 @@ contract AraEmissionDistributor is AccessControl, Ownable {
             address(this),
             _amount
         );
+        emit DepositAnotherToken(msg.sender, _pid, _amount, msg.sender);
     }
 
     function withdrawAndDistribute(uint256 _pid, uint256 _tokenId) external {
@@ -1225,15 +1231,14 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256 _allocPoint
     ) external onlyOwner {
         // Add a new pool with the specified token reward, block reward, closed status, allocation point and current timestamp to the poolInfoAnotherToken array
-        poolInfoAnotherToken.push(
+        poolInfoAnotherToken[totalPidsAnotherToken] = 
             PoolInfoAnotherToken({
                 tokenReward: _tokenReward,
                 anotherTokenPerBlock: _anotherTokenPerBlock,
                 allocPoint: _allocPoint,
                 lastRewardBlock: block.number,
                 accAnotherTokenPerShare: 0
-            })
-        );
+            });
 
         totalPidsAnotherToken++;
         totalAnotherAllocPoint = totalAnotherAllocPoint + _allocPoint;
@@ -1252,6 +1257,9 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256 _allocPoint,
         uint256 _anotherTokenPerBlock
     ) external onlyOwner {
+        if(_pid >= totalPidsAnotherToken) {
+            revert InvalidPoolId();
+        }
         // Update the allocation point, token reward, block reward and closed status of the specified AnotherToken pool
         PoolInfoAnotherToken storage poolAnotherToken = poolInfoAnotherToken[
             _pid
@@ -1342,6 +1350,12 @@ contract AraEmissionDistributor is AccessControl, Ownable {
             }
             poolAnotherToken.lastRewardBlock = block.number;
             poolInfoAnotherToken[_pid] = poolAnotherToken;
+
+            emit LogUpdatePoolAnotherToken(
+                _pid,
+                poolAnotherToken.lastRewardBlock,
+                poolAnotherToken.accAnotherTokenPerShare
+            );
         }
     }
 

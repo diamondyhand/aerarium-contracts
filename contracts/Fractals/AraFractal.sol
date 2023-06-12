@@ -45,6 +45,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
     event Withdraw(address indexed provider, uint tokenId, uint value, uint ts);
     event Supply(uint prevSupply, uint supply);
+    event SetVoter(address indexed _voter);
+    event UpdateVoteStatus(uint256 indexed _tokenId, bool voted);
+    event AttachToken(uint256 indexed _tokenId, uint256 indexed attachment);
+    event DetachToken(uint256 indexed _tokenId, uint256 indexed attachment);
 
     uint internal constant WEEK = 1 weeks;
     uint internal constant MULTIPLIER = 1 ether;
@@ -121,11 +125,20 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         _entered_state = _not_entered;
     }
 
+    modifier onlyVoter() {
+        require(msg.sender == voter);
+        _;
+    }
+
     error ValueShouldEqual();
     error NotCreateFractals();
     error QueryNonexistentToken();
     error NotOwnerNorApproved();
     error FailedTransferNewTokens();
+    error NotInThePast();
+    error SameApprovalAddress();
+    error ZeroAddress();
+    error AlreadyOwnedToken();
 
     /// @notice Contract constructor
     /// @param token_addr `ERC20CRV` token address
@@ -306,7 +319,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     ///      Throws if `_tokenId` is owned by someone.
     function _addTokenTo(address _to, uint _tokenId) internal {
         // Throws if `_tokenId` is owned by someone
-        assert(idToOwner[_tokenId] == address(0));
+        if(idToOwner[_tokenId] != address(0)) {
+            revert AlreadyOwnedToken();
+        }
+
         // Change the owner
         idToOwner[_tokenId] = _to;
         // Update owner token index tracking
@@ -319,7 +335,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     ///      Throws if `_from` is not the current owner.
     function _removeTokenFrom(address _from, uint _tokenId) internal {
         // Throws if `_from` is not the current owner
-        assert(idToOwner[_tokenId] == _from);
+        if(idToOwner[_tokenId] != _from) {
+            revert NotOwnerNorApproved();
+        }
         // Change the owner
         idToOwner[_tokenId] = address(0);
         // Update owner token index tracking
@@ -332,7 +350,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     ///      Throws if `_owner` is not the current owner.
     function _clearApproval(address _owner, uint _tokenId) internal {
         // Throws if `_owner` is not the current owner
-        assert(idToOwner[_tokenId] == _owner);
+        if(idToOwner[_tokenId] != _owner) {
+            revert NotOwnerNorApproved();
+        }
         if (idToApprovals[_tokenId] != address(0)) {
             // Reset approvals
             idToApprovals[_tokenId] = address(0);
@@ -482,7 +502,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _approved True if the operators is approved, false to revoke approval.
     function setApprovalForAll(address _operator, bool _approved) external {
         // Throws if `_operator` is the `msg.sender`
-        assert(_operator != msg.sender);
+        if(_operator == msg.sender) {
+            revert SameApprovalAddress();
+        }
         ownerToOperators[msg.sender][_operator] = _approved;
         emit ApprovalForAll(msg.sender, _operator, _approved);
     }
@@ -495,7 +517,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @return A boolean that indicates if the operation was successful.
     function _mint(address _to, uint _tokenId) internal returns (bool) {
         // Throws if `_to` is zero address
-        assert(_to != address(0));
+        if(_to == address(0)) {
+            revert ZeroAddress();
+        }
         // Add NFT. Throws if `_tokenId` is owned by someone
         _addTokenTo(_to, _tokenId);
         emit Transfer(address(0), _to, _tokenId);
@@ -550,24 +574,24 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         return _locked.amount;
     }
 
-    function setVoter(address _voter) external {
-        require(msg.sender == voter);
+    function setVoter(address _voter) external onlyVoter{
         voter = _voter;
+        emit SetVoter(_voter);
     }
 
-    function voting(uint _tokenId) external {
-        require(msg.sender == voter);
+    function voting(uint _tokenId) external onlyVoter{
         voted[_tokenId] = true;
+        emit UpdateVoteStatus(_tokenId, true);
     }
 
-    function attach(uint _tokenId) external {
-        require(msg.sender == voter);
+    function attach(uint _tokenId) external onlyVoter{
         attachments[_tokenId] = attachments[_tokenId] + 1;
+        emit AttachToken(_tokenId, attachments[_tokenId]);
     }
 
-    function detach(uint _tokenId) external {
-        require(msg.sender == voter);
+    function detach(uint _tokenId) external onlyVoter{
         attachments[_tokenId] = attachments[_tokenId] - 1;
+        emit DetachToken(_tokenId, attachments[_tokenId]);
     }
 
     function block_number() external view returns (uint) {
@@ -709,7 +733,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     ) internal view returns (uint) {
         // Copying and pasting totalSupply code because Vyper cannot pass by
         // reference yet
-        assert(_block <= block.number);
+        if(_block > block.number) {
+            revert NotInThePast();
+        }
 
         // Binary search
         uint _min = 0;
@@ -813,7 +839,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _block Block to calculate the total voting power at
     /// @return Total voting power at `_block`
     function totalSupplyAt(uint _block) external view returns (uint) {
-        assert(_block <= block.number);
+        if(_block > block.number) {
+            revert NotInThePast();
+        }
         uint _epoch = epoch;
         uint target_epoch = _find_block_epoch(_block, _epoch);
 

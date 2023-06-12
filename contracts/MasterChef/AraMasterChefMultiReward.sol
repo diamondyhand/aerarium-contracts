@@ -1127,7 +1127,11 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         address indexed rewardToken,
         uint256 rewardPerBlock
     );
+    event SetFeeAddress(
+        address indexed feeAddress
+    );
 
+    error InvalidPoolId();
     error ZeroAddress();
 
     constructor(address _feeAddress) {
@@ -1185,7 +1189,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         }
 
         emit AddPool(
-            poolInfo.length -  (1),
+            poolInfo.length -  1,
             _allocPoint,
             address(_lpToken),
             _rewardTokens
@@ -1200,6 +1204,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         bool _withUpdate,
         address[] memory _rewardTokens
     ) external onlyOwner {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         require(
             _depositFeeBP <= 10000,
             "set: invalid deposit fee basis points"
@@ -1326,6 +1333,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     }
 
     function updatePool(uint256 _pid) public {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         PoolInfo storage pool = poolInfo[_pid];
         if (block.timestamp <= pool.lastRewardBlock) {
             return;
@@ -1360,6 +1370,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     }
 
     function deposit(uint256 _pid, uint256 _amount) external nonReentrant {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
@@ -1408,6 +1421,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
 
     // Withdraw LP tokens from MultiRewardMasterChef.
     function withdraw(uint256 _pid, uint256 _amount) external {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
@@ -1445,6 +1461,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     }
 
     function emergencyWithdraw(uint256 _pid) public {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         uint256 amount = user.amount;
@@ -1480,6 +1499,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     function setFeeAddress(address _feeAddress) external {
         require(msg.sender == feeAddress, "setFeeAddress: FORBIDDEN");
         feeAddress = _feeAddress;
+        emit SetFeeAddress(_feeAddress);
     }
 
     function _depositAllToStrategy(uint256 _pid, IStrategy _strategy) internal {

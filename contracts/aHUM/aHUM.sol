@@ -2327,9 +2327,9 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
 
     uint256 public araPerBlock;
-    uint256 public totalAllocPoint = 0;
+    uint256 public totalAllocPoint;
 
-    uint256 public totalAmountOfSupplyStaked = 0; // total ARA locked in pools
+    uint256 public totalAmountOfSupplyStaked; // total ARA locked in pools
 
     uint256 private constant ACC_ARA_PRECISION = 1e12; // Precision for accumulating ARA
     uint256 public constant POOL_PERCENTAGE = 0.876e3; // Percentage of ARA allocated to pools
@@ -2359,6 +2359,12 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
         uint256 amount,
         address indexed to
     );
+    
+    event UpdateEmissionRate(uint256 indexed _araPerBlock);
+    event WithdrawETH(address indexed from, uint256 indexed amount);
+    event ClaimVeHumRewards();
+    event WithdrawVeHumRewards(uint256 indexed _amount);
+    event WithdrawErc20(address indexed token, address indexed from, uint256 indexed amount);
 
     /* General Events */
     event EmergencyWithdraw(
@@ -2369,6 +2375,7 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
 
     error ZeroAddress();
     error InsufficientRewardtokens();
+    error InvalidPoolId();
 
     constructor(
         IERC20 _hum, // veARA ERC721 token
@@ -2393,6 +2400,9 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
     // Function to deposit veARA token to the contract and receive rewards
     function depositToChef(uint256 _pid, uint256 amount) external {
         // ARA Rewards attributes
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         PoolInfo memory pool = updatePool(_pid);
         UserInfo storage user = userInfo[_pid][msg.sender];
 
@@ -2421,6 +2431,9 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
 
     // Function to deposit veARA token to the contract and receive rewards
     function stake(uint256 _pid, uint256 amount) external {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         // ARA Rewards attributes
         PoolInfo memory pool = updatePool(_pid);
         UserInfo storage user = userInfo[_pid][msg.sender];
@@ -2442,6 +2455,10 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
     }
 
     function withdrawAndDistribute(uint256 _pid, uint256 amount) external {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
+
         PoolInfo memory pool = updatePool(_pid);
         UserInfo storage user = userInfo[_pid][msg.sender];
 
@@ -2465,6 +2482,10 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
     }
 
     function harvestAndDistribute(uint256 _pid) public {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
+
         PoolInfo memory pool = updatePool(_pid);
         UserInfo storage user = userInfo[_pid][msg.sender];
         chef.deposit(farmPid, 0);
@@ -2561,14 +2582,17 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
 
     function updateEmissionRate(uint256 _araPerBlock) public onlyOwner {
         araPerBlock = _araPerBlock;
+        emit UpdateEmissionRate(_araPerBlock);
     }
 
     function claimVeHumRewards() public onlyOwner {
         IVeHum(address(vuhum)).claim();
+        emit ClaimVeHumRewards();
     }
 
     function withdrawHumRewards(uint256 _amount) public onlyOwner {
         IVeHum(address(vuhum)).withdraw(_amount);
+        emit WithdrawVeHumRewards(_amount);
     }
 
     function withdrawErc20Tokens(
@@ -2580,9 +2604,11 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
             address(msg.sender),
             amount
         );
+        emit WithdrawErc20(token, address(msg.sender), amount);
     }
 
     function withdraw(uint256 amount) public onlyOwner {
         payable(msg.sender).transfer(amount);
+        emit WithdrawETH(address(msg.sender), amount);
     }
 }
