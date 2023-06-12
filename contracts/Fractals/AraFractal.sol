@@ -125,6 +125,11 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         _entered_state = _not_entered;
     }
 
+    modifier onlyVoter() {
+        require(msg.sender == voter);
+        _;
+    }
+
     error ValueShouldEqual();
     error NotCreateFractals();
     error QueryNonexistentToken();
@@ -569,26 +574,22 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         return _locked.amount;
     }
 
-    function setVoter(address _voter) external {
-        require(msg.sender == voter);
+    function setVoter(address _voter) external onlyVoter{
         voter = _voter;
         emit SetVoter(_voter);
     }
 
-    function voting(uint _tokenId) external {
-        require(msg.sender == voter);
+    function voting(uint _tokenId) external onlyVoter{
         voted[_tokenId] = true;
         emit UpdateVoteStatus(_tokenId, true);
     }
 
-    function attach(uint _tokenId) external {
-        require(msg.sender == voter);
+    function attach(uint _tokenId) external onlyVoter{
         attachments[_tokenId] = attachments[_tokenId] + 1;
         emit AttachToken(_tokenId, attachments[_tokenId]);
     }
 
-    function detach(uint _tokenId) external {
-        require(msg.sender == voter);
+    function detach(uint _tokenId) external onlyVoter{
         attachments[_tokenId] = attachments[_tokenId] - 1;
         emit DetachToken(_tokenId, attachments[_tokenId]);
     }
