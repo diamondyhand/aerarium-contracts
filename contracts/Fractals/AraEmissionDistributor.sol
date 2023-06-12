@@ -1029,6 +1029,9 @@ contract AraEmissionDistributor is AccessControl, Ownable {
 
     // Function to deposit veARA token to the contract and receive rewards
     function depositToChef(uint256 _pid, uint256 _tokenId) external {
+        if(_pid >= totalPidsAnotherToken) {
+            revert InvalidPoolId();
+        }
         // Check if msg.sender is the owner of the veARA
         address ownerOfTokenId = IERC721(araFractalV2).ownerOf(_tokenId);
         if(ownerOfTokenId != msg.sender) {
@@ -1254,6 +1257,9 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256 _allocPoint,
         uint256 _anotherTokenPerBlock
     ) external onlyOwner {
+        if(_pid >= totalPidsAnotherToken) {
+            revert InvalidPoolId();
+        }
         // Update the allocation point, token reward, block reward and closed status of the specified AnotherToken pool
         PoolInfoAnotherToken storage poolAnotherToken = poolInfoAnotherToken[
             _pid

@@ -1160,7 +1160,8 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         uint256 indexed pid,
         uint256 allocPoint
     );
-        
+    
+    error InvalidPoolId();
     error ZeroAddress();
 
     constructor(
@@ -1228,6 +1229,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         IStrategy _strategy,
         bool _withUpdate
     ) external onlyOwner {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         require(
             _depositFeeBP <= 10000,
             "set: invalid deposit fee basis points"
@@ -1306,6 +1310,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
 
     // Update reward variables of the given pool to be up-to-date.
     function updatePool(uint256 _pid) public {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         PoolInfo storage pool = poolInfo[_pid];
         if (block.timestamp <= pool.lastRewardBlock) {
             return;
@@ -1340,6 +1347,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
 
     // Deposit LP tokens to MasterChef for ara allocation.
     function deposit(uint256 _pid, uint256 _amount) external nonReentrant {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
@@ -1379,6 +1389,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
 
     // Withdraw LP tokens from MasterChef.
     function withdraw(uint256 _pid, uint256 _amount) external nonReentrant {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
@@ -1406,6 +1419,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
     function emergencyWithdraw(uint256 _pid) external nonReentrant {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         uint256 amount = user.amount;

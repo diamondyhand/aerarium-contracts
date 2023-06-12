@@ -2375,6 +2375,7 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
 
     error ZeroAddress();
     error InsufficientRewardtokens();
+    error InvalidPoolId();
 
     constructor(
         IERC20 _hum, // veARA ERC721 token
@@ -2399,6 +2400,9 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
     // Function to deposit veARA token to the contract and receive rewards
     function depositToChef(uint256 _pid, uint256 amount) external {
         // ARA Rewards attributes
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         PoolInfo memory pool = updatePool(_pid);
         UserInfo storage user = userInfo[_pid][msg.sender];
 
@@ -2427,6 +2431,9 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
 
     // Function to deposit veARA token to the contract and receive rewards
     function stake(uint256 _pid, uint256 amount) external {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         // ARA Rewards attributes
         PoolInfo memory pool = updatePool(_pid);
         UserInfo storage user = userInfo[_pid][msg.sender];
@@ -2448,6 +2455,10 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
     }
 
     function withdrawAndDistribute(uint256 _pid, uint256 amount) external {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
+
         PoolInfo memory pool = updatePool(_pid);
         UserInfo storage user = userInfo[_pid][msg.sender];
 
@@ -2471,6 +2482,10 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
     }
 
     function harvestAndDistribute(uint256 _pid) public {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
+
         PoolInfo memory pool = updatePool(_pid);
         UserInfo storage user = userInfo[_pid][msg.sender];
         chef.deposit(farmPid, 0);
