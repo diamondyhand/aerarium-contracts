@@ -950,12 +950,14 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     }
     /****************************************************************/
 
-    PoolInfoAnotherToken[] public poolInfoAnotherToken; // an array to store information of all pools of another token
     uint256 public totalPidsAnotherToken = 0; // total number of another token pools
+    mapping(uint256 => PoolInfoAnotherToken) public poolInfoAnotherToken; // an array to store information of all pools of another token
     mapping(uint256 => mapping(address => mapping(uint256 => UserInfoAnotherToken)))
         public userInfoAnotherToken; // mapping form poolId => user Address => User Info
 
-    TokenInfo[] public tokenInfo; // mapping form poolId => user Address => User Info
+    uint256 public tokenInfoCount = 0;
+    mapping(uint256 => TokenInfo) public tokenInfo;
+
 
     uint256 public totalAnotherAllocPoint = 0;
 
@@ -1062,7 +1064,8 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         /*******************************************************************/
 
         // Push the tokenInfo to the tokenInfo array
-        tokenInfo.push(TokenInfo({user: msg.sender, numberNFT: _tokenId}));
+        tokenInfo[tokenInfoCount] = TokenInfo({user: msg.sender, numberNFT: _tokenId});
+        tokenInfoCount ++;
 
         // Events
         // Emit events for deposit
@@ -1225,15 +1228,14 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256 _allocPoint
     ) external onlyOwner {
         // Add a new pool with the specified token reward, block reward, closed status, allocation point and current timestamp to the poolInfoAnotherToken array
-        poolInfoAnotherToken.push(
+        poolInfoAnotherToken[totalPidsAnotherToken] = 
             PoolInfoAnotherToken({
                 tokenReward: _tokenReward,
                 anotherTokenPerBlock: _anotherTokenPerBlock,
                 allocPoint: _allocPoint,
                 lastRewardBlock: block.number,
                 accAnotherTokenPerShare: 0
-            })
-        );
+            });
 
         totalPidsAnotherToken++;
         totalAnotherAllocPoint = totalAnotherAllocPoint + _allocPoint;
