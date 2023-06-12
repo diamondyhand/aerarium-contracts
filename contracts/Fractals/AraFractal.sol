@@ -45,6 +45,10 @@ contract ve is IERC721, IERC721Metadata, Ownable {
 
     event Withdraw(address indexed provider, uint tokenId, uint value, uint ts);
     event Supply(uint prevSupply, uint supply);
+    event SetVoter(address indexed _voter);
+    event UpdateVoteStatus(uint256 indexed _tokenId, boolean voted);
+    event AttachToken(uint256 indexed _tokenId, uint256 indexed attachment);
+    event DetachToken(uint256 indexed _tokenId, uint256 indexed attachment);
 
     uint internal constant WEEK = 1 weeks;
     uint internal constant MULTIPLIER = 1 ether;
@@ -553,21 +557,25 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     function setVoter(address _voter) external {
         require(msg.sender == voter);
         voter = _voter;
+        emit SetVoter(_voter);
     }
 
     function voting(uint _tokenId) external {
         require(msg.sender == voter);
         voted[_tokenId] = true;
+        emit UpdateVoteStatus(_tokenId, true);
     }
 
     function attach(uint _tokenId) external {
         require(msg.sender == voter);
         attachments[_tokenId] = attachments[_tokenId] + 1;
+        emit AttachToken(_tokenId, attachments[_tokenId]);
     }
 
     function detach(uint _tokenId) external {
         require(msg.sender == voter);
         attachments[_tokenId] = attachments[_tokenId] - 1;
+        emit DetachToken(_tokenId, attachments[_tokenId]);
     }
 
     function block_number() external view returns (uint) {

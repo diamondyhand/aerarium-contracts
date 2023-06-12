@@ -1127,6 +1127,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         address indexed rewardToken,
         uint256 rewardPerBlock
     );
+    event SetFeeAddress(
+        address indexed feeAddress
+    );
 
     error ZeroAddress();
 
@@ -1185,7 +1188,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         }
 
         emit AddPool(
-            poolInfo.length -  (1),
+            poolInfo.length -  1,
             _allocPoint,
             address(_lpToken),
             _rewardTokens
@@ -1480,6 +1483,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     function setFeeAddress(address _feeAddress) external {
         require(msg.sender == feeAddress, "setFeeAddress: FORBIDDEN");
         feeAddress = _feeAddress;
+        emit SetFeeAddress(_feeAddress);
     }
 
     function _depositAllToStrategy(uint256 _pid, IStrategy _strategy) internal {

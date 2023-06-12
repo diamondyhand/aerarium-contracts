@@ -976,6 +976,8 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
     event BlacklistModified(address account, bool blacklisted);
     event KickIncentiveSet(uint256 rate, uint256 delay);
     event Shutdown();
+    event AddRewardToken(address indexed rewardToken);
+    event AddEpoch(uint256 indexed epochId, uint256 indexed nextEpochDate);
 
     error RewardError(string);
     error KickIncentiveError(string);
@@ -1079,6 +1081,8 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         rewardTokens.push(_rewardsToken);
         rewardData[_rewardsToken].lastUpdateTime = uint32(block.timestamp);
         rewardData[_rewardsToken].periodFinish = uint32(block.timestamp);
+
+        emit AddRewardToken(_rewardsToken);
     }
 
     //set kick incentive
@@ -1240,6 +1244,7 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
             while (nextEpochDate != currentEpoch) {
                 nextEpochDate = nextEpochDate.add(rewardsDuration);
                 epochs.push(Epoch({supply: 0, date: uint32(nextEpochDate)}));
+                emit AddEpoch(epochs.length - 1, nextEpochDate);
             }
         }
     }

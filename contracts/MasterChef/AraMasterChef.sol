@@ -1151,6 +1151,16 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     event SetDevAddress(address indexed user, address indexed newAddress);
     event UpdateEmissionRate(address indexed user, uint256 araPerBlock);
 
+    event AddPool(
+        uint256 indexed pid,
+        uint256 allocPoint,
+        address indexed lpToken
+    );
+    event SetPool(
+        uint256 indexed pid,
+        uint256 allocPoint
+    );
+        
     error ZeroAddress();
 
     constructor(
@@ -1203,6 +1213,11 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
                 depositFeeBP: _depositFeeBP
             })
         );
+        emit AddPool(
+            poolInfo.length -  1,
+            _allocPoint,
+            address(_lpToken)
+        );
     }
 
     // Update the given pool's ara allocation point and deposit fee. Can only be called by the owner.
@@ -1234,6 +1249,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
             }
             strategies[_pid] = _strategy;
         }
+        emit SetPool(_pid, _allocPoint);
     }
 
     // Return reward multiplier over the given _from to _to block.

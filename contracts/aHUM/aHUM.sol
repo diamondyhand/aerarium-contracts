@@ -2359,6 +2359,12 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
         uint256 amount,
         address indexed to
     );
+    
+    event UpdateEmissionRate(uint256 indexed _araPerBlock);
+    event WithdrawETH(address indexed from, uint256 indexed amount);
+    event ClaimVeHumRewards();
+    event WithdrawVeHumRewards(uint256 indexed _amount);
+    event WithdrawErc20(address indexed token, address indexed from, uint256 indexed amount);
 
     /* General Events */
     event EmergencyWithdraw(
@@ -2561,14 +2567,17 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
 
     function updateEmissionRate(uint256 _araPerBlock) public onlyOwner {
         araPerBlock = _araPerBlock;
+        emit UpdateEmissionRate(_araPerBlock);
     }
 
     function claimVeHumRewards() public onlyOwner {
         IVeHum(address(vuhum)).claim();
+        emit ClaimVeHumRewards();
     }
 
     function withdrawHumRewards(uint256 _amount) public onlyOwner {
         IVeHum(address(vuhum)).withdraw(_amount);
+        emit WithdrawVeHumRewards(_amount);
     }
 
     function withdrawErc20Tokens(
@@ -2580,9 +2589,11 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
             address(msg.sender),
             amount
         );
+        emit WithdrawErc20(token, address(msg.sender), amount);
     }
 
     function withdraw(uint256 amount) public onlyOwner {
         payable(msg.sender).transfer(amount);
+        emit WithdrawETH(address(msg.sender), amount);
     }
 }

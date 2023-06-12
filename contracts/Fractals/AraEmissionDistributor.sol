@@ -1001,7 +1001,6 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     event LogUpdatePoolAnotherToken(
         uint256 indexed pid,
         uint256 lastRewardBlock,
-        uint256 totalAmountLockedAra,
         uint256 accARAPerShare
     );
 
@@ -1085,6 +1084,7 @@ contract AraEmissionDistributor is AccessControl, Ownable {
             address(this),
             _amount
         );
+        emit DepositAnotherToken(msg.sender, _pid, _amount, msg.sender);
     }
 
     function withdrawAndDistribute(uint256 _pid, uint256 _tokenId) external {
@@ -1342,6 +1342,12 @@ contract AraEmissionDistributor is AccessControl, Ownable {
             }
             poolAnotherToken.lastRewardBlock = block.number;
             poolInfoAnotherToken[_pid] = poolAnotherToken;
+
+            emit LogUpdatePoolAnotherToken(
+                _pid,
+                poolAnotherToken.lastRewardBlock,
+                poolAnotherToken.accAnotherTokenPerShare
+            );
         }
     }
 
