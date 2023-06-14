@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
-contract ve is IERC721, IERC721Metadata, Ownable {
+contract AraFractal is IERC721, IERC721Metadata, Ownable {
     using SafeERC20 for IERC20;
     enum DepositType {
         CREATE_LOCK_TYPE,

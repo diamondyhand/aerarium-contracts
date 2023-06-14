@@ -826,7 +826,7 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
 
 pragma solidity 0.8.18;
 
-contract StrategyHummusFarm is StrategyGeneralMasterChefBase {
+contract HummusV2Strategy is StrategyGeneralMasterChefBase {
     // Token addresses
     address public hum = 0x4aAC94985cD83be30164DfE7e9AF7C054D7d2121;
     address public masterChef = 0x9cadd693cDb2B118F00252Bb3be4C6Df6A74d42C;

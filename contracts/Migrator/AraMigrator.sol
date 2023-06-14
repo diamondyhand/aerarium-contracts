@@ -91,7 +91,7 @@ interface IERC20 {
         
 pragma solidity 0.8.18;
 
-contract TokenSwap {
+contract AraMigrator {
     IERC20 public oldToken;
     IERC20 public newToken;
     address public owner;

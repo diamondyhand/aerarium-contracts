@@ -61,7 +61,7 @@ interface IERC721Enumerable is IERC721 {
     function tokenByIndex(uint256 index) external view returns (uint256);
 }
 
-contract TokenSwap{
+contract FractalMigrator{
     IERC721 public oldToken;
     IERC721 public newToken;
     address public owner;

@@ -1063,7 +1063,7 @@ contract IMasterChef {
 pragma solidity 0.8.18;
 pragma experimental ABIEncoderV2;
 
-contract AraMasterChef is Ownable, ReentrancyGuard {
+contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
     using SafeBEP20 for IBEP20;
     using BoringERC20 for IERC20;
 
