@@ -2344,7 +2344,7 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
     address public vuhum;
 
     /* ARA Rewards Events*/
-    event LogSetPool(uint256 allocPoint);
+    event LogSetPool(uint256 indexed pid, uint256 allocPoint);
     event Harvest(address indexed user, uint256 indexed pid, uint256 amount);
     event LogPoolAddition(uint256 indexed pid, uint256 allocPoint);
     event Deposit(
@@ -2426,7 +2426,7 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
             ACC_ARA_PRECISION;
         /*************************************************************/
 
-        emit Deposit(msg.sender, 0, amount, msg.sender);
+        emit Deposit(msg.sender, _pid, amount, msg.sender);
     }
 
     // Function to deposit veARA token to the contract and receive rewards
@@ -2451,7 +2451,7 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
             ACC_ARA_PRECISION;
         /*************************************************************/
 
-        emit Deposit(msg.sender, 0, amount, msg.sender);
+        emit Deposit(msg.sender, _pid, amount, msg.sender);
     }
 
     function withdrawAndDistribute(uint256 _pid, uint256 amount) external {
@@ -2478,7 +2478,7 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
         /************************************************************/
 
         // Events
-        emit Withdraw(msg.sender, 0, amount, msg.sender);
+        emit Withdraw(msg.sender, _pid, amount, msg.sender);
     }
 
     function harvestAndDistribute(uint256 _pid) public {
@@ -2511,15 +2511,22 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
             })
         );
         totalAllocPoint = totalAllocPoint + _allocPoint;
-        emit LogPoolAddition(0, _allocPoint);
+        emit LogPoolAddition(poolInfo.length - 1, _allocPoint);
     }
 
-    function set(uint256 _allocPoint) public onlyOwner {
-        poolInfo[0].allocPoint = _allocPoint;
-        emit LogSetPool(_allocPoint);
+    function set(uint256 _pid, uint256 _allocPoint) public onlyOwner {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
+        totalAllocPoint = totalAllocPoint - poolInfo[_pid].allocPoint + _allocPoint;
+        poolInfo[_pid].allocPoint = _allocPoint;
+        emit LogSetPool(_pid, _allocPoint);
     }
 
     function updatePool(uint256 _pid) public returns (PoolInfo memory pool) {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         pool = poolInfo[_pid];
         if (block.number > pool.lastRewardBlock) {
             if (totalAmountOfSupplyStaked > 0) {
@@ -2544,6 +2551,9 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
         uint256 _pid,
         address _user
     ) external view returns (uint256 pending) {
+        if(_pid >= poolInfo.length) {
+            revert InvalidPoolId();
+        }
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accARAPerShare = pool.accARAPerShare;
