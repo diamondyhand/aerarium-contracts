@@ -107,9 +107,16 @@ contract AraMigrator {
         _;
     }
 
+    error ZeroAddress();
+
     constructor(address  _oldTokenAddress, address _newTokenAddress, address _receiver) {
+        if(_oldTokenAddress == address(0) || _newTokenAddress == address(0)) {
+            revert ZeroAddress();
+        }
+
         oldToken = IERC20(_oldTokenAddress);
         newToken = IERC20(_newTokenAddress);
+
         owner = msg.sender;
         receiver = _receiver;
     }
