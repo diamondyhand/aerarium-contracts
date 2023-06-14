@@ -15,10 +15,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 contract ve is IERC721, IERC721Metadata, Ownable {
     using SafeERC20 for IERC20;
     enum DepositType {
-        DEPOSIT_FOR_TYPE,
         CREATE_LOCK_TYPE,
-        INCREASE_LOCK_AMOUNT,
-        INCREASE_UNLOCK_TIME,
         MERGE_TYPE
     }
 
