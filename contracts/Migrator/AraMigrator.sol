@@ -91,11 +91,21 @@ interface IERC20 {
         
 pragma solidity 0.8.18;
 
-contract TokenSwap {
+contract AraMigrator {
     IERC20 public oldToken;
     IERC20 public newToken;
     address public owner;
     address public receiver;
+
+    modifier onlyOwner(bool isNew) {
+        if(isNew) {
+            require(owner == msg.sender, "Only the contract owner can withdraw new tokens.");
+        }
+        else {
+            require(owner == msg.sender, "Only the contract owner can withdraw old tokens.");
+        }
+        _;
+    }
 
     constructor(address  _oldTokenAddress, address _newTokenAddress, address _receiver) {
         oldToken = IERC20(_oldTokenAddress);
@@ -115,13 +125,11 @@ contract TokenSwap {
         require(newToken.transfer(msg.sender, _amount), "Failed to transfer new tokens.");
     }
 
-    function withdrawNewTokens(uint256 _amount) public {
-        require(msg.sender == owner, "Only the contract owner can withdraw new tokens.");
+    function withdrawNewTokens(uint256 _amount) public onlyOwner(true){
         require(newToken.transfer(msg.sender, _amount), "Failed to transfer new tokens.");
     }
 
-    function withdrawOldTokens(uint256 _amount) public {
-        require(msg.sender == owner, "Only the contract owner can withdraw new tokens.");
+    function withdrawOldTokens(uint256 _amount) public onlyOwner(false){
         require(oldToken.transfer(msg.sender, _amount), "Failed to transfer new tokens.");
     }
 }

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.18;
 
 /**
@@ -62,10 +61,20 @@ interface IERC721Enumerable is IERC721 {
     function tokenByIndex(uint256 index) external view returns (uint256);
 }
 
-contract TokenSwap {
+contract FractalMigrator{
     IERC721 public oldToken;
     IERC721 public newToken;
     address public owner;
+
+    modifier onlyOwner(bool isNew) {
+        if(isNew) {
+            require(owner == msg.sender, "Only the contract owner can withdraw new tokens.");
+        }
+        else {
+            require(owner == msg.sender, "Only the contract owner can withdraw old tokens.");
+        }
+        _;
+    }
 
     constructor(address _oldTokenAddress, address _newTokenAddress) {
         oldToken = IERC721(_oldTokenAddress);
@@ -95,21 +104,13 @@ contract TokenSwap {
         }
     }
 
-    function withdrawOldTokens(uint256[] memory _tokenIds) public {
-        require(
-            msg.sender == owner,
-            "Only the contract owner can withdraw old tokens."
-        );
+    function withdrawOldTokens(uint256[] memory _tokenIds) public onlyOwner(false){
         for (uint i = 0; i < _tokenIds.length; i++) {
             oldToken.transferFrom(address(this), msg.sender, _tokenIds[i]);
         }
     }
 
-    function withdrawNewTokens(uint256[] memory _tokenIds) public {
-        require(
-            msg.sender == owner,
-            "Only the contract owner can withdraw old tokens."
-        );
+    function withdrawNewTokens(uint256[] memory _tokenIds) public onlyOwner(true){
         for (uint i = 0; i < _tokenIds.length; i++) {
             newToken.transferFrom(address(this), msg.sender, _tokenIds[i]);
         }
