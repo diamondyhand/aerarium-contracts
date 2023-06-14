@@ -966,7 +966,7 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     mapping(address => uint256) public totalNftsByUser;
 
     uint256 private constant ACC_ANOTHERTOKEN_PRECISION = 1e12; // precision used for calculations involving another token
-    // uint256 public constant POOL_PERCENTAGE = 0.876e3; // Percentage of ARA allocated to pools
+    uint256 public constant POOL_PERCENTAGE = 0.876e3; // Percentage of ARA allocated to pools
 
     uint256 public constant DENOMINATOR = 1e3; // Constant denominator for calculating allocation points
 
@@ -1264,10 +1264,10 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         PoolInfoAnotherToken storage poolAnotherToken = poolInfoAnotherToken[
             _pid
         ];
-        poolAnotherToken.allocPoint = _allocPoint;
         poolAnotherToken.tokenReward = _tokenReward;
         poolAnotherToken.anotherTokenPerBlock = _anotherTokenPerBlock;
-        totalAnotherAllocPoint = totalAnotherAllocPoint + _allocPoint;
+        totalAnotherAllocPoint = totalAnotherAllocPoint - poolAnotherToken.allocPoint + _allocPoint;
+        poolAnotherToken.allocPoint = _allocPoint;
         // Emit an event to log the pool update
         emit LogSetPoolAnotherToken(_pid, _tokenReward, _allocPoint);
     }
@@ -1305,7 +1305,7 @@ contract AraEmissionDistributor is AccessControl, Ownable {
                 poolAnotherToken.allocPoint) / totalAnotherAllocPoint;
             // we take parts of the rewards for treasury, these can be subject to change, so we recalculate it a value of 1000 = 100%
             uint256 anotherTokenRewardsForPool = (anotherTokenRewards *
-                DENOMINATOR) / DENOMINATOR;
+                POOL_PERCENTAGE) / DENOMINATOR;
 
             // we calculate the new amount of accumulated anotherToken per veARA
             accAnotherTokenPerShare =

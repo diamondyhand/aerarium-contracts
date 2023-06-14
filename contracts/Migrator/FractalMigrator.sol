@@ -76,7 +76,13 @@ contract FractalMigrator{
         _;
     }
 
+    error ZeroAddress();
+
     constructor(address _oldTokenAddress, address _newTokenAddress) {
+        if(_oldTokenAddress == address(0) || _newTokenAddress == address(0)) {
+            revert ZeroAddress();
+        }
+        
         oldToken = IERC721(_oldTokenAddress);
         newToken = IERC721(_newTokenAddress);
         owner = msg.sender;
