@@ -1341,7 +1341,7 @@ contract AraEmissionDistributor is AccessControl, Ownable {
                     poolAnotherToken.allocPoint) / totalAnotherAllocPoint;
 
                 uint256 anotherTokenRewardsForPool = (anotherTokenRewards *
-                    DENOMINATOR) / DENOMINATOR;
+                    POOL_PERCENTAGE) / DENOMINATOR;
 
                 poolAnotherToken.accAnotherTokenPerShare =
                     poolAnotherToken.accAnotherTokenPerShare +
