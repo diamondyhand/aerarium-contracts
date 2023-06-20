@@ -1,3 +1,36 @@
+error InsufficientBalance();
+error UnableToSendVaule();
+error NonContractCall();
+error AraMathUint224Overflow();
+error AraMathUint128Overflow();
+error AraMathUint112Overflow();
+error AraMathUint96Overflow();
+error AraMathUint32Overflow();
+error ReentrantCall();
+error ApproveError(string message);
+error OptionalReturn(string message);
+error NotOwner();
+error ZeroAddress();
+error BlacklistedSender();
+error BlacklistedReceiver();
+error MustBeContract();
+error CannotWithdraw();
+error CannotStakeZero();
+error LengthMismatch();
+error MustBeShutdown();
+error Nothinglocked();
+error NoLocks();
+error NoExpLocks();
+error NothingToDelegate();
+error MustChooseNewDelegatee();
+error ERC20VotesBlockNotMined();
+error EpochInTheFuture();
+error TooMuchRewards();
+error NoReward();
+error RewardRateError();
+error BalanceError();
+error AlreadyShutdown();
+
 /**
  * @dev Provides information about the current execution context, including the
  * sender of the transaction and its data. While these are generally available
@@ -156,16 +189,14 @@ library Address {
      * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(
-            address(this).balance >= amount,
-            "Address: insufficient balance"
-        );
+        if(address(this).balance < amount) {
+            revert InsufficientBalance();
+        }
 
         (bool success, ) = recipient.call{value: amount}("");
-        require(
-            success,
-            "Address: unable to send value, recipient may have reverted"
-        );
+        if(!success) {
+            revert UnableToSendVaule();
+        }
     }
 
     /**
@@ -244,11 +275,12 @@ library Address {
         uint256 value,
         string memory errorMessage
     ) internal returns (bytes memory) {
-        require(
-            address(this).balance >= value,
-            "Address: insufficient balance for call"
-        );
-        require(isContract(target), "Address: call to non-contract");
+        if(address(this).balance < value) {
+           revert InsufficientBalance();
+        }
+        if(!isContract(target)) {
+            revert NonContractCall();
+        }
 
         (bool success, bytes memory returndata) = target.call{value: value}(
             data
@@ -285,7 +317,9 @@ library Address {
         bytes memory data,
         string memory errorMessage
     ) internal view returns (bytes memory) {
-        require(isContract(target), "Address: static call to non-contract");
+        if(!isContract(target)) {
+            revert NonContractCall();
+        }
 
         (bool success, bytes memory returndata) = target.staticcall(data);
         return verifyCallResult(success, returndata, errorMessage);
@@ -320,7 +354,9 @@ library Address {
         bytes memory data,
         string memory errorMessage
     ) internal returns (bytes memory) {
-        require(isContract(target), "Address: delegate call to non-contract");
+        if(!isContract(target)) {
+            revert NonContractCall();
+        }
 
         (bool success, bytes memory returndata) = target.delegatecall(data);
         return verifyCallResult(success, returndata, errorMessage);
@@ -536,27 +572,37 @@ library AraMath {
     }
 
     function to224(uint256 a) internal pure returns (uint224 c) {
-        require(a <= type(uint224).max, "AraMath: uint224 Overflow");
+        if(a > type(uint224).max){
+            revert AraMathUint224Overflow();
+        }
         c = uint224(a);
     }
 
     function to128(uint256 a) internal pure returns (uint128 c) {
-        require(a <= type(uint128).max, "AraMath: uint128 Overflow");
+        if(a > type(uint128).max){
+            revert AraMathUint128Overflow();
+        }
         c = uint128(a);
     }
 
     function to112(uint256 a) internal pure returns (uint112 c) {
-        require(a <= type(uint112).max, "AraMath: uint112 Overflow");
+        if(a > type(uint112).max){
+            revert AraMathUint112Overflow();
+        } 
         c = uint112(a);
     }
 
     function to96(uint256 a) internal pure returns (uint96 c) {
-        require(a <= type(uint96).max, "AraMath: uint96 Overflow");
+        if(a > type(uint96).max){
+            revert AraMathUint96Overflow();
+        }
         c = uint96(a);
     }
 
     function to32(uint256 a) internal pure returns (uint32 c) {
-        require(a <= type(uint32).max, "AraMath: uint32 Overflow");
+        if(a > type(uint32).max){
+            revert AraMathUint32Overflow();
+        }
         c = uint32(a);
     }
 }
@@ -632,7 +678,9 @@ abstract contract ReentrancyGuard {
      */
     modifier nonReentrant() {
         // On the first call to nonReentrant, _notEntered will be true
-        require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
+        if(_status == _ENTERED) {
+            revert ReentrantCall();
+        } 
 
         // Any calls to nonReentrant after this point will fail
         _status = _ENTERED;
@@ -691,10 +739,10 @@ library SafeERC20 {
         // safeApprove should only be called when setting an initial allowance,
         // or when resetting it to zero. To increase and decrease it, use
         // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
-        require(
-            (value == 0) || (token.allowance(address(this), spender) == 0),
-            "SafeERC20: approve from non-zero to non-zero allowance"
-        );
+        if((value > 0) && (token.allowance(address(this), spender) > 0))
+        {
+            revert ApproveError("SafeERC20: approve from non-zero to non-zero allowance");
+        }  
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(token.approve.selector, spender, value)
@@ -724,10 +772,9 @@ library SafeERC20 {
     ) internal {
         unchecked {
             uint256 oldAllowance = token.allowance(address(this), spender);
-            require(
-                oldAllowance >= value,
-                "SafeERC20: decreased allowance below zero"
-            );
+            if(oldAllowance < value) {
+                revert ApproveError("SafeERC20: decreased allowance below zero");
+            }
             uint256 newAllowance = oldAllowance - value;
             _callOptionalReturn(
                 token,
@@ -755,12 +802,10 @@ library SafeERC20 {
             data,
             "SafeERC20: low-level call failed"
         );
-        if (returndata.length > 0) {
-            // Return data is optional
-            require(
-                abi.decode(returndata, (bool)),
-                "SafeERC20: ERC20 operation did not succeed"
-            );
+        if(
+            returndata.length > 0 && !abi.decode(returndata, (bool))
+        ) {
+            revert OptionalReturn("SafeERC20: ERC20 operation did not succeed");
         }
     }
 }
@@ -803,7 +848,9 @@ abstract contract Ownable is Context {
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(owner() == _msgSender(), "Ownable: caller is not the owner");
+        if(owner() != _msgSender()){
+            revert NotOwner();
+        }
         _;
     }
 
@@ -823,10 +870,9 @@ abstract contract Ownable is Context {
      * Can only be called by the current owner.
      */
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(
-            newOwner != address(0),
-            "Ownable: new owner is the zero address"
-        );
+        if(newOwner == address(0)) {
+            revert ZeroAddress();
+        }
         _transferOwnership(newOwner);
     }
 
@@ -1040,10 +1086,14 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
     }
 
     modifier notBlacklisted(address _sender, address _receiver) {
-        require(!blacklist[_sender], "blacklisted");
+        if(blacklist[_sender]) {
+            revert BlacklistedSender();
+        } 
 
         if (_sender != _receiver) {
-            require(!blacklist[_receiver], "blacklisted");
+            if(blacklist[_receiver]){
+                revert BlacklistedReceiver();
+            }
         }
 
         _;
@@ -1062,7 +1112,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         assembly {
             cs := extcodesize(_account)
         }
-        require(cs != 0, "Must be contract");
+        if(cs == 0) {
+          revert MustBeContract();
+        }
 
         blacklist[_account] = _blacklisted;
         emit BlacklistModified(_account, _blacklisted);
@@ -1114,14 +1166,12 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         address _tokenAddress,
         uint256 _tokenAmount
     ) external onlyOwner {
-        require(
-            _tokenAddress != address(stakingToken),
-            "Cannot withdraw staking token"
-        );
-        require(
-            rewardData[_tokenAddress].lastUpdateTime == 0,
-            "Cannot withdraw reward token"
-        );
+        if(_tokenAddress == address(stakingToken)){
+            revert CannotWithdraw();
+        }
+        if(rewardData[_tokenAddress].lastUpdateTime > 0){
+            revert CannotWithdraw();
+        }
         IERC20(_tokenAddress).safeTransfer(owner(), _tokenAmount);
         emit Recovered(_tokenAddress, _tokenAmount);
     }
@@ -1147,8 +1197,12 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         address _account,
         uint256 _amount
     ) internal notBlacklisted(msg.sender, _account) {
-        require(_amount > 0, "Cannot stake 0");
-        require(!isShutdown, "shutdown");
+        if(_amount == 0){
+            revert CannotStakeZero();
+        } 
+        if(isShutdown){
+            revert AlreadyShutdown();
+        }
 
         Balances storage bal = balances[_account];
 
@@ -1214,7 +1268,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         bool[] calldata _skipIdx
     ) external nonReentrant updateReward(_account) {
         uint256 rewardTokensLength = rewardTokens.length;
-        require(_skipIdx.length == rewardTokensLength, "!arr");
+        if(_skipIdx.length != rewardTokensLength){
+            revert LengthMismatch();
+        }
         for (uint256 i; i < rewardTokensLength; i++) {
             if (_skipIdx[i]) continue;
             address _rewardsToken = rewardTokens[i];
@@ -1266,13 +1322,17 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
 
     // Withdraw without checkpointing or accruing any rewards, providing system is shutdown
     function emergencyWithdraw() external nonReentrant {
-        require(isShutdown, "Must be shutdown");
+        if(!isShutdown){
+            revert MustBeShutdown();
+        }
 
         LockedBalance[] memory locks = userLocks[msg.sender];
         Balances storage userBalance = balances[msg.sender];
 
         uint256 amt = userBalance.locked;
-        require(amt > 0, "Nothing locked");
+        if(amt == 0) {
+            revert Nothinglocked();
+        }
 
         userBalance.locked = 0;
         userBalance.nextUnlockIndex = locks.length.to32();
@@ -1298,7 +1358,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         uint256 expiryTime = _checkDelay == 0 && _relock
             ? block.timestamp.add(rewardsDuration)
             : block.timestamp.sub(_checkDelay);
-        require(length > 0, "no locks");
+        if(length == 0) {
+            revert NoLocks();
+        }
         // e.g. now = 16
         // if contract is shutdown OR latest lock unlock time (e.g. 17) <= now - (1)
         // e.g. 17 <= (16 + 1)
@@ -1364,7 +1426,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
             //update next unlock index
             userBalance.nextUnlockIndex = nextUnlockIndex;
         }
-        require(locked > 0, "no exp locks");
+        if(locked == 0) {
+            revert NoExpLocks();
+        } 
 
         //update user balances and total supplies
         userBalance.locked = userBalance.locked.sub(locked);
@@ -1404,12 +1468,18 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         // Step 1: Get lock data
         LockedBalance[] storage locks = userLocks[msg.sender];
         uint256 len = locks.length;
-        require(len > 0, "Nothing to delegate");
-        require(newDelegatee != address(0), "Must delegate to someone");
+        if(len == 0) {
+            revert NothingToDelegate();
+        } 
+        if(newDelegatee == address(0)) {
+            revert ZeroAddress();
+        }
 
         // Step 2: Update delegatee storage
         address oldDelegatee = delegates(msg.sender);
-        require(newDelegatee != oldDelegatee, "Must choose new delegatee");
+        if(newDelegatee == oldDelegatee) {
+            revert MustChooseNewDelegatee();
+        } 
         _delegates[msg.sender] = newDelegatee;
 
         emit DelegateChanged(msg.sender, oldDelegatee, newDelegatee);
@@ -1558,10 +1628,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         address account,
         uint256 timestamp
     ) public view returns (uint256 votes) {
-        require(
-            timestamp <= block.timestamp,
-            "ERC20Votes: block not yet mined"
-        );
+        if(timestamp > block.timestamp) {
+            revert ERC20VotesBlockNotMined();
+        }
         uint256 epoch = timestamp.div(rewardsDuration).mul(rewardsDuration);
         DelegateeCheckpoint memory ckpt = _checkpointsLookup(
             _checkpointedVotes[account],
@@ -1584,7 +1653,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
     function getPastTotalSupply(
         uint256 timestamp
     ) external view returns (uint256) {
-        require(timestamp < block.timestamp, "ERC20Votes: block not yet mined");
+        if(timestamp >= block.timestamp){
+            revert ERC20VotesBlockNotMined();
+        } 
         return totalSupplyAtEpoch(findEpochId(timestamp));
     }
 
@@ -1627,7 +1698,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         uint256 epochStart = uint256(epochs[0].date).add(
             uint256(_epoch).mul(rewardsDuration)
         );
-        require(epochStart < block.timestamp, "Epoch is in the future");
+        if(epochStart >= block.timestamp){
+            revert EpochInTheFuture();
+        }
 
         uint256 cutoffEpoch = epochStart.sub(lockDuration);
 
@@ -1699,7 +1772,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         uint256 epochStart = uint256(epochs[0].date).add(
             uint256(_epoch).mul(rewardsDuration)
         );
-        require(epochStart < block.timestamp, "Epoch is in the future");
+        if(epochStart >= block.timestamp) {
+            revert EpochInTheFuture();
+        }
 
         uint256 cutoffEpoch = epochStart.sub(lockDuration);
         uint256 lastIndex = epochs.length - 1;
@@ -1827,7 +1902,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         address _rewardsToken,
         uint256 _rewards
     ) external nonReentrant {
-        require(_rewards > 0, "No reward");
+        if(_rewards == 0){
+            revert NoReward();
+        }
 
         RewardData storage rdata = rewardData[_rewardsToken];
 
@@ -1838,7 +1915,9 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         );
 
         _rewards = _rewards.add(queuedRewards[_rewardsToken]);
-        require(_rewards < 1e25, "!rewards");
+        if(_rewards >= 1e25) {
+            revert TooMuchRewards();
+        }
 
         if (block.timestamp >= rdata.periodFinish) {
             _notifyReward(_rewardsToken, _rewards);
@@ -1881,8 +1960,12 @@ contract AraLocker is ReentrancyGuard, Ownable, IAraLocker {
         }
 
         // Equivalent to 10 million tokens over a weeks duration
-        require(rdata.rewardRate < 1e20, "!rewardRate");
-        require(lockedSupply >= 1e20, "!balance");
+        if(rdata.rewardRate >= 1e20) {
+            revert RewardRateError();
+        }
+        if(lockedSupply < 1e20) {
+            revert BalanceError();
+        }
 
         rdata.lastUpdateTime = block.timestamp.to32();
         rdata.periodFinish = block.timestamp.add(rewardsDuration).to32();
