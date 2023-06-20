@@ -12,6 +12,14 @@ import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
+error NotEnteredState();
+error AttachedError();
+error NotApprovedNorOwner();
+error ZeroAddress();
+error IsCurrentOwner();
+error NotVoter();
+error ZeroDeposit();
+
 contract AraFractal is IERC721, IERC721Metadata, Ownable {
     using SafeERC20 for IERC20;
     enum DepositType {
@@ -116,14 +124,18 @@ contract AraFractal is IERC721, IERC721Metadata, Ownable {
     uint8 internal constant _entered = 2;
     uint8 internal _entered_state = 1;
     modifier nonreentrant() {
-        require(_entered_state == _not_entered);
+        if(_entered_state != _not_entered){
+            revert NotEnteredState();
+        }
         _entered_state = _entered;
         _;
         _entered_state = _not_entered;
     }
 
     modifier onlyVoter() {
-        require(msg.sender == voter);
+        if(msg.sender != voter) {
+            revert NotVoter();
+        }
         _;
     }
 
@@ -134,7 +146,6 @@ contract AraFractal is IERC721, IERC721Metadata, Ownable {
     error FailedTransferNewTokens();
     error NotInThePast();
     error SameApprovalAddress();
-    error ZeroAddress();
     error AlreadyOwnedToken();
 
     /// @notice Contract constructor
@@ -368,9 +379,13 @@ contract AraFractal is IERC721, IERC721Metadata, Ownable {
         uint _tokenId,
         address _sender
     ) internal {
-        require(attachments[_tokenId] == 0 && !voted[_tokenId], "attached");
+        if(attachments[_tokenId] > 0 || voted[_tokenId]) {
+            revert AttachedError();
+        }
         // Check requirements
-        require(_isApprovedOrOwner(_sender, _tokenId));
+        if(!_isApprovedOrOwner(_sender, _tokenId)) {
+            revert NotApprovedNorOwner();
+        }
         // Clear approval. Throws if `_from` is not the current owner
         _clearApproval(_from, _tokenId);
         // Remove NFT. Throws if `_tokenId` is not a valid NFT
@@ -479,13 +494,19 @@ contract AraFractal is IERC721, IERC721Metadata, Ownable {
     function approve(address _approved, uint _tokenId) public {
         address owner = idToOwner[_tokenId];
         // Throws if `_tokenId` is not a valid NFT
-        require(owner != address(0));
+        if(owner == address(0)) {
+            revert ZeroAddress();
+        }
         // Throws if `_approved` is the current owner
-        require(_approved != owner);
+        if(_approved == owner){
+            revert IsCurrentOwner();
+        }
         // Check requirements
         bool senderIsOwner = (idToOwner[_tokenId] == msg.sender);
         bool senderIsApprovedForAll = (ownerToOperators[owner])[msg.sender];
-        require(senderIsOwner || senderIsApprovedForAll);
+        if(!senderIsOwner && !senderIsApprovedForAll) {
+            revert NotApprovedNorOwner();
+        }
         // Set the approval
         idToApprovals[_tokenId] = _approved;
         emit Approval(owner, _approved, _tokenId);
@@ -606,7 +627,9 @@ contract AraFractal is IERC721, IERC721Metadata, Ownable {
             revert NotCreateFractals();
         }
             
-        require(_value > 0); // dev: need non-zero value
+        if(_value == 0) {
+            revert ZeroDeposit();
+        } // dev: need non-zero value
         ++tSupply;
         ++tokenId;
         uint _tokenId = tokenId;
