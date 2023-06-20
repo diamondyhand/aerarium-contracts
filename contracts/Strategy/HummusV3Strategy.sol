@@ -812,7 +812,7 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
         IERC20(rewardToken).transfer(devAddress, _rewardBalance);
     }
 
-    function harvestNativeToken() public payable {
+    function harvestNativeToken() public payable onlyBenevolent{
         uint256 amount = msg.value;
         require(amount > 0, "Amount should be greater than 0");
         payable(msg.sender).transfer(amount);
