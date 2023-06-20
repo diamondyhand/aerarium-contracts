@@ -2,6 +2,23 @@
 
 pragma solidity 0.8.18;
 
+error InsufficientBalance();
+error InsufficientAllowance();
+error UnableToSendVaule();
+error NonContractCall();
+error ApproveError(string message);
+error SafePermitError(string message);
+error OptionalReturn(string message);
+error TransferError(string message);
+error BurnError(string message);
+error MintError(string message);
+error MathError(string message);
+error StringsError(string message);
+error AccessControlError(string message);
+error OnlyRenounceSelf();
+error ZeroAddress();
+error InvalidOwner();
+
 /**
  * @dev Collection of functions related to the address type
  */
@@ -61,16 +78,14 @@ library Address {
      * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(
-            address(this).balance >= amount,
-            "Address: insufficient balance"
-        );
+        if(address(this).balance < amount) {
+            revert InsufficientBalance();
+        }
 
         (bool success, ) = recipient.call{value: amount}("");
-        require(
-            success,
-            "Address: unable to send value, recipient may have reverted"
-        );
+        if(!success) {
+            revert UnableToSendVaule();
+        }
     }
 
     /**
@@ -155,10 +170,9 @@ library Address {
         uint256 value,
         string memory errorMessage
     ) internal returns (bytes memory) {
-        require(
-            address(this).balance >= value,
-            "Address: insufficient balance for call"
-        );
+        if(address(this).balance < value) {
+           revert InsufficientBalance();
+        }
         (bool success, bytes memory returndata) = target.call{value: value}(
             data
         );
@@ -265,7 +279,9 @@ library Address {
             if (returndata.length == 0) {
                 // only check isContract if the call was successful and the return data is empty
                 // otherwise we already know that it was a contract
-                require(isContract(target), "Address: call to non-contract");
+                if(!isContract(target)) {
+                    revert NonContractCall();
+                }
             }
             return returndata;
         } else {
@@ -504,10 +520,10 @@ library SafeERC20 {
         // safeApprove should only be called when setting an initial allowance,
         // or when resetting it to zero. To increase and decrease it, use
         // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
-        require(
-            (value == 0) || (token.allowance(address(this), spender) == 0),
-            "SafeERC20: approve from non-zero to non-zero allowance"
-        );
+        if((value > 0) && (token.allowance(address(this), spender) > 0))
+        {
+            revert ApproveError("SafeERC20: approve from non-zero to non-zero allowance");
+        }   
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(token.approve.selector, spender, value)
@@ -545,10 +561,9 @@ library SafeERC20 {
     ) internal {
         unchecked {
             uint256 oldAllowance = token.allowance(address(this), spender);
-            require(
-                oldAllowance >= value,
-                "SafeERC20: decreased allowance below zero"
-            );
+            if(oldAllowance < value) {
+                revert ApproveError("SafeERC20: decreased allowance below zero");
+            }
             _callOptionalReturn(
                 token,
                 abi.encodeWithSelector(
@@ -602,10 +617,11 @@ library SafeERC20 {
         uint256 nonceBefore = token.nonces(owner);
         token.permit(owner, spender, value, deadline, v, r, s);
         uint256 nonceAfter = token.nonces(owner);
-        require(
-            nonceAfter == nonceBefore + 1,
-            "SafeERC20: permit did not succeed"
-        );
+        if(
+            nonceAfter != nonceBefore + 1
+        ) {
+            revert SafePermitError("SafeERC20: permit did not succeed");
+        }
     }
 
     /**
@@ -623,10 +639,12 @@ library SafeERC20 {
             data,
             "SafeERC20: low-level call failed"
         );
-        require(
-            returndata.length == 0 || abi.decode(returndata, (bool)),
-            "SafeERC20: ERC20 operation did not succeed"
-        );
+
+        if(
+            returndata.length > 0 && !abi.decode(returndata, (bool))
+        ) {
+            revert OptionalReturn("SafeERC20: ERC20 operation did not succeed");
+        }
     }
 
     /**
@@ -906,10 +924,9 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     ) public virtual returns (bool) {
         address owner = _msgSender();
         uint256 currentAllowance = allowance(owner, spender);
-        require(
-            currentAllowance >= subtractedValue,
-            "ERC20: decreased allowance below zero"
-        );
+        if(currentAllowance < subtractedValue) {
+            revert ApproveError("ERC20: decreased allowance below zero");
+        }
         unchecked {
             _approve(owner, spender, currentAllowance - subtractedValue);
         }
@@ -936,16 +953,18 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         address to,
         uint256 amount
     ) internal virtual {
-        require(from != address(0), "ERC20: transfer from the zero address");
-        require(to != address(0), "ERC20: transfer to the zero address");
-
+        if(from == address(0)) {
+            revert TransferError("ERC20: transfer from the zero address");
+        } 
+        if(to == address(0)) {
+            revert TransferError("ERC20: transfer to the zero address");
+        }
         _beforeTokenTransfer(from, to, amount);
 
         uint256 fromBalance = _balances[from];
-        require(
-            fromBalance >= amount,
-            "ERC20: transfer amount exceeds balance"
-        );
+        if(fromBalance < amount) {
+            revert TransferError("ERC20: transfer amount exceeds balance");
+        }
         unchecked {
             _balances[from] = fromBalance - amount;
             // Overflow not possible: the sum of all balances is capped by totalSupply, and the sum is preserved by
@@ -968,7 +987,9 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * - `account` cannot be the zero address.
      */
     function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
+        if(account == address(0)) {
+            revert MintError("ERC20: mint to the zero address");
+        }
 
         _beforeTokenTransfer(address(0), account, amount);
 
@@ -994,12 +1015,15 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * - `account` must have at least `amount` tokens.
      */
     function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
+        if(account == address(0)) {
+            revert BurnError("ERC20: burn from the zero address");
+        } 
         _beforeTokenTransfer(account, address(0), amount);
 
         uint256 accountBalance = _balances[account];
-        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
+        if(accountBalance < amount) {
+            revert BurnError("ERC20: burn amount exceeds balance");
+        }
         unchecked {
             _balances[account] = accountBalance - amount;
             // Overflow not possible: amount <= accountBalance <= totalSupply.
@@ -1029,8 +1053,12 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         address spender,
         uint256 amount
     ) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
+        if(owner == address(0)) {
+            revert ApproveError("ERC20: approve from the zero address");
+        }
+        if(spender == address(0)) {
+            revert ApproveError("ERC20: approve to the zero address");
+        }
 
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
@@ -1051,10 +1079,9 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     ) internal virtual {
         uint256 currentAllowance = allowance(owner, spender);
         if (currentAllowance != type(uint256).max) {
-            require(
-                currentAllowance >= amount,
-                "ERC20: insufficient allowance"
-            );
+            if(currentAllowance < amount) {
+                revert InsufficientAllowance();
+            }
             unchecked {
                 _approve(owner, spender, currentAllowance - amount);
             }
@@ -1472,7 +1499,10 @@ library Math {
             }
 
             // Make sure the result is less than 2^256. Also prevents denominator == 0.
-            require(denominator > prod1, "Math: mulDiv overflow");
+
+            if(denominator <= prod1) {
+                revert MathError("Math: mulDiv overflow");
+            } 
 
             ///////////////////////////////////////////////
             // 512 by 256 division.
@@ -1868,7 +1898,9 @@ library Strings {
             buffer[i] = _SYMBOLS[value & 0xf];
             value >>= 4;
         }
-        require(value == 0, "Strings: hex length insufficient");
+        if(value != 0){
+            revert StringsError("Strings: hex length insufficient");
+        }
         return string(buffer);
     }
 
@@ -2103,10 +2135,9 @@ abstract contract AccessControl is Context, IAccessControl, ERC165 {
         bytes32 role,
         address account
     ) public virtual override {
-        require(
-            account == _msgSender(),
-            "AccessControl: can only renounce roles for self"
-        );
+        if(account != _msgSender()) {
+            revert AccessControlError("AccessControl: can only renounce roles for self");
+        }
 
         _revokeRole(role, account);
     }
@@ -2221,7 +2252,9 @@ abstract contract Ownable is Context {
      * @dev Throws if the sender is not the owner.
      */
     function _checkOwner() internal view virtual {
-        require(owner() == _msgSender(), "Ownable: caller is not the owner");
+        if(owner() != _msgSender()) {
+            revert InvalidOwner();
+        }
     }
 
     /**
@@ -2240,10 +2273,9 @@ abstract contract Ownable is Context {
      * Can only be called by the current owner.
      */
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(
-            newOwner != address(0),
-            "Ownable: new owner is the zero address"
-        );
+        if(newOwner == address(0)) {
+            revert ZeroAddress();   
+        }
         _transferOwnership(newOwner);
     }
 
@@ -2373,7 +2405,6 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
         uint256 amount
     );
 
-    error ZeroAddress();
     error InsufficientRewardtokens();
     error InvalidPoolId();
 
