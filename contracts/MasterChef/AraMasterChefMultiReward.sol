@@ -3,7 +3,7 @@
 pragma solidity 0.8.18;
 
 error InsufficientBalance();
-error UnableToSendVaule();
+error UnableToSendValue();
 error NonContractCall();
 error ReentrantCall();
 error ApproveError(string message);
@@ -249,7 +249,7 @@ library Address {
         // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
         (bool success, ) = recipient.call{value: amount}("");
         if(!success) {
-            revert UnableToSendVaule();
+            revert UnableToSendValue();
         }
     }
 

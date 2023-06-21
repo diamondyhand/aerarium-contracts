@@ -1,5 +1,5 @@
 error InsufficientBalance();
-error UnableToSendVaule();
+error UnableToSendValue();
 error NonContractCall();
 error AraMathUint224Overflow();
 error AraMathUint128Overflow();
@@ -195,7 +195,7 @@ library Address {
 
         (bool success, ) = recipient.call{value: amount}("");
         if(!success) {
-            revert UnableToSendVaule();
+            revert UnableToSendValue();
         }
     }
 

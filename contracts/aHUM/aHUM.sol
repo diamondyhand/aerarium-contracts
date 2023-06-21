@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 
 error InsufficientBalance();
 error InsufficientAllowance();
-error UnableToSendVaule();
+error UnableToSendValue();
 error NonContractCall();
 error ApproveError(string message);
 error SafePermitError(string message);
@@ -84,7 +84,7 @@ library Address {
 
         (bool success, ) = recipient.call{value: amount}("");
         if(!success) {
-            revert UnableToSendVaule();
+            revert UnableToSendValue();
         }
     }
 
