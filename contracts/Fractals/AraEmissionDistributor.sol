@@ -22,6 +22,10 @@ error NotEqualToAmountTobeLocked();
 error NotCanCreateFractalsTrue();
 error ZeroDeposit();
 error QueryTokenNonexistent();
+error AlreadyOwnedToken();
+error NotTokenOwner();
+error OperatorIsSender();
+error BlockIntheFuture();
 
 contract ve is IERC721, IERC721Metadata, Ownable {
     using SafeERC20 for IERC20;
@@ -310,7 +314,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     ///      Throws if `_tokenId` is owned by someone.
     function _addTokenTo(address _to, uint _tokenId) internal {
         // Throws if `_tokenId` is owned by someone
-        assert(idToOwner[_tokenId] == address(0));
+        if(idToOwner[_tokenId] != address(0)) {
+            revert AlreadyOwnedToken();
+        }
         // Change the owner
         idToOwner[_tokenId] = _to;
         // Update owner token index tracking
@@ -323,7 +329,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     ///      Throws if `_from` is not the current owner.
     function _removeTokenFrom(address _from, uint _tokenId) internal {
         // Throws if `_from` is not the current owner
-        assert(idToOwner[_tokenId] == _from);
+        if(idToOwner[_tokenId] != _from){
+            revert NotTokenOwner();
+        }
         // Change the owner
         idToOwner[_tokenId] = address(0);
         // Update owner token index tracking
@@ -336,7 +344,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     ///      Throws if `_owner` is not the current owner.
     function _clearApproval(address _owner, uint _tokenId) internal {
         // Throws if `_owner` is not the current owner
-        assert(idToOwner[_tokenId] == _owner);
+        if(idToOwner[_tokenId] != _owner) {
+            revert NotTokenOwner();
+        }
         if (idToApprovals[_tokenId] != address(0)) {
             // Reset approvals
             idToApprovals[_tokenId] = address(0);
@@ -496,7 +506,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _approved True if the operators is approved, false to revoke approval.
     function setApprovalForAll(address _operator, bool _approved) external {
         // Throws if `_operator` is the `msg.sender`
-        assert(_operator != msg.sender);
+        if(_operator == msg.sender) {
+            revert OperatorIsSender();
+        }
         ownerToOperators[msg.sender][_operator] = _approved;
         emit ApprovalForAll(msg.sender, _operator, _approved);
     }
@@ -509,7 +521,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @return A boolean that indicates if the operation was successful.
     function _mint(address _to, uint _tokenId) internal returns (bool) {
         // Throws if `_to` is zero address
-        assert(_to != address(0));
+        if(_to == address(0)) {
+            revert ZeroAddress();
+        }
         // Add NFT. Throws if `_tokenId` is owned by someone
         _addTokenTo(_to, _tokenId);
         emit Transfer(address(0), _to, _tokenId);
@@ -732,7 +746,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     ) internal view returns (uint) {
         // Copying and pasting totalSupply code because Vyper cannot pass by
         // reference yet
-        assert(_block <= block.number);
+        if(_block > block.number) {
+            revert BlockIntheFuture();
+        }
 
         // Binary search
         uint _min = 0;
@@ -836,7 +852,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _block Block to calculate the total voting power at
     /// @return Total voting power at `_block`
     function totalSupplyAt(uint _block) external view returns (uint) {
-        assert(_block <= block.number);
+        if(_block > block.number){
+            revert BlockIntheFuture();
+        }
         uint _epoch = epoch;
         uint target_epoch = _find_block_epoch(_block, _epoch);
 
