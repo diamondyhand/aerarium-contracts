@@ -1593,7 +1593,9 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
             _strategy.withdraw(_strategyBalance);
             uint256 _currentBalance = _lpToken.balanceOf(address(this));
 
-            require(_currentBalance >= _strategyBalance, "!balance1");
+            if(_currentBalance < _strategyBalance){
+                revert InsufficientBalance();
+            }
 
             _strategyBalance = _strategy.balanceOf();
             if(_strategyBalance > 0){

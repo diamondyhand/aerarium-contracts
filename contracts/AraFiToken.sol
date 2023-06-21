@@ -343,7 +343,7 @@ contract ERC20 is Context, IERC20 {
      */
     function _mint(address account, uint256 amount) internal virtual {
        if(account == address(0)) {
-            revert MintError("BEP20: mint to the zero address");
+            revert MintError("ERC20: mint to the zero address");
         }
 
         _beforeTokenTransfer(address(0), account, amount);
@@ -366,10 +366,10 @@ contract ERC20 is Context, IERC20 {
      */
     function _burn(address account, uint256 amount) internal virtual {
         if(account == address(0)) {
-            revert BurnError("BEP20: burn from the zero address");
+            revert BurnError("ERC20: burn from the zero address");
         }
         if(_balances[account] < amount){
-            revert BurnError("BEP20: burn amount exceeds balance");
+            revert BurnError("ERC20: burn amount exceeds balance");
         }
 
         _beforeTokenTransfer(account, address(0), amount);
@@ -394,10 +394,10 @@ contract ERC20 is Context, IERC20 {
      */
     function _approve(address owner, address spender, uint256 amount) internal virtual {
         if(owner == address(0)) {
-            revert ApproveError("BEP20: approve from the zero address");
+            revert ApproveError("ERC20: approve from the zero address");
         }
         if(spender == address(0)) {
-            revert ApproveError("BEP20: approve to the zero address");
+            revert ApproveError("ERC20: approve to the zero address");
         }
 
         _allowances[owner][spender] = amount;

@@ -2,6 +2,16 @@
 
 pragma solidity 0.8.18;
 
+error InsufficientBalance();
+error UnableToSendValue();
+error NonContractCall();
+error ApproveError(string message);
+error PermitError();
+error OptionalReturn(string message);
+error NotNewTokenOwner();
+error NotOldTokenOwner();
+error InsufficientAllowance();
+
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
  */
@@ -148,16 +158,14 @@ library Address {
      * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(
-            address(this).balance >= amount,
-            "Address: insufficient balance"
-        );
+        if(address(this).balance < amount) {
+            revert InsufficientBalance();
+        }
 
         (bool success, ) = recipient.call{value: amount}("");
-        require(
-            success,
-            "Address: unable to send value, recipient may have reverted"
-        );
+        if(!success) {
+            revert UnableToSendValue();
+        }
     }
 
     /**
@@ -242,10 +250,9 @@ library Address {
         uint256 value,
         string memory errorMessage
     ) internal returns (bytes memory) {
-        require(
-            address(this).balance >= value,
-            "Address: insufficient balance for call"
-        );
+        if(address(this).balance < value) {
+           revert InsufficientBalance();
+        }
         (bool success, bytes memory returndata) = target.call{value: value}(
             data
         );
@@ -352,7 +359,9 @@ library Address {
             if (returndata.length == 0) {
                 // only check isContract if the call was successful and the return data is empty
                 // otherwise we already know that it was a contract
-                require(isContract(target), "Address: call to non-contract");
+                if(!isContract(target)) {
+                    revert NonContractCall();
+                }
             }
             return returndata;
         } else {
@@ -507,10 +516,10 @@ library SafeERC20 {
         // safeApprove should only be called when setting an initial allowance,
         // or when resetting it to zero. To increase and decrease it, use
         // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
-        require(
-            (value == 0) || (token.allowance(address(this), spender) == 0),
-            "SafeERC20: approve from non-zero to non-zero allowance"
-        );
+        if((value > 0) && (token.allowance(address(this), spender) > 0))
+        {
+            revert ApproveError("SafeERC20: approve from non-zero to non-zero allowance");
+        }
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(token.approve.selector, spender, value)
@@ -548,10 +557,9 @@ library SafeERC20 {
     ) internal {
         unchecked {
             uint256 oldAllowance = token.allowance(address(this), spender);
-            require(
-                oldAllowance >= value,
-                "SafeERC20: decreased allowance below zero"
-            );
+            if(oldAllowance < value) {
+                revert ApproveError("SafeERC20: decreased allowance below zero");
+            }
             _callOptionalReturn(
                 token,
                 abi.encodeWithSelector(
@@ -605,10 +613,9 @@ library SafeERC20 {
         uint256 nonceBefore = token.nonces(owner);
         token.permit(owner, spender, value, deadline, v, r, s);
         uint256 nonceAfter = token.nonces(owner);
-        require(
-            nonceAfter == nonceBefore + 1,
-            "SafeERC20: permit did not succeed"
-        );
+        if(nonceAfter != nonceBefore + 1){
+            revert PermitError();
+        }
     }
 
     /**
@@ -626,10 +633,11 @@ library SafeERC20 {
             data,
             "SafeERC20: low-level call failed"
         );
-        require(
-            returndata.length == 0 || abi.decode(returndata, (bool)),
-            "SafeERC20: ERC20 operation did not succeed"
-        );
+        if(
+            returndata.length > 0 && !abi.decode(returndata, (bool))
+        ) {
+            revert OptionalReturn("SafeERC20: operation did not succeed");
+        }
     }
 
     /**
@@ -667,10 +675,14 @@ contract AraMigrator {
 
     modifier onlyOwner(bool isNew) {
         if(isNew) {
-            require(owner == msg.sender, "Only the contract owner can withdraw new tokens.");
+            if(owner != msg.sender){
+                revert NotNewTokenOwner();
+            }
         }
         else {
-            require(owner == msg.sender, "Only the contract owner can withdraw old tokens.");
+            if(owner != msg.sender) {
+                revert NotOldTokenOwner();
+            }
         }
         _;
     }
@@ -695,7 +707,9 @@ contract AraMigrator {
     }
 
     function swap(uint256 _amount) public {
-        require(oldToken.allowance(msg.sender, address(this)) >= _amount, "Token allowance not enough");
+        if(oldToken.allowance(msg.sender, address(this)) < _amount){
+            revert InsufficientAllowance();
+        }
         oldToken.safeTransferFrom(msg.sender, receiver, _amount);
         newToken.safeTransfer(msg.sender, _amount);
     }
