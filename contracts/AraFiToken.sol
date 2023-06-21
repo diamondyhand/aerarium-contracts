@@ -2,6 +2,15 @@
 
 pragma solidity 0.8.18;
 
+error InsufficientAllowance();
+error TransferError(string message);
+error MintError(string message);
+error BurnError(string message);
+error ApproveError(string message);
+error NotOwner();
+error ZeroAddress();
+error NotOperator();
+
 /*
  * @dev Provides information about the current execution context, including the
  * sender of the transaction and its data. While these are generally available
@@ -245,7 +254,9 @@ contract ERC20 is Context, IERC20 {
      */
     function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
-        require(_allowances[sender][_msgSender()] >= amount, "ERC20: transfer amount exceeds allowance");
+        if(_allowances[sender][_msgSender()] < amount){
+            revert InsufficientAllowance();
+        }
         _approve(sender, _msgSender(), _allowances[sender][_msgSender()] - amount);
         return true;
     }
@@ -282,7 +293,9 @@ contract ERC20 is Context, IERC20 {
      * `subtractedValue`.
      */
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        require(_allowances[_msgSender()][spender] >= subtractedValue, "ERC20: decreased allowance below zero");
+        if(_allowances[_msgSender()][spender] < subtractedValue){
+            revert InsufficientAllowance();
+        }
         _approve(_msgSender(), spender, _allowances[_msgSender()][spender] - subtractedValue);
         return true;
     }
@@ -302,9 +315,15 @@ contract ERC20 is Context, IERC20 {
      * - `sender` must have a balance of at least `amount`.
      */
     function _transfer(address sender, address recipient, uint256 amount) internal virtual {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-        require(_balances[sender] >= amount, "ERC20: transfer amount exceeds balance");
+        if(sender == address(0)){
+            revert TransferError("ERC20: transfer from the zero address");
+        }
+        if(recipient == address(0)){
+            revert TransferError("ERC20: transfer to the zero address");
+        } 
+        if(_balances[sender] < amount){
+            revert TransferError("ERC20: transfer amount exceeds balance");
+        }
 
         _beforeTokenTransfer(sender, recipient, amount);
 
@@ -323,7 +342,9 @@ contract ERC20 is Context, IERC20 {
      * - `to` cannot be the zero address.
      */
     function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
+       if(account == address(0)) {
+            revert MintError("BEP20: mint to the zero address");
+        }
 
         _beforeTokenTransfer(address(0), account, amount);
 
@@ -344,8 +365,12 @@ contract ERC20 is Context, IERC20 {
      * - `account` must have at least `amount` tokens.
      */
     function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-        require(_balances[account] >= amount, "ERC20: burn amount exceeds balance");
+        if(account == address(0)) {
+            revert BurnError("BEP20: burn from the zero address");
+        }
+        if(_balances[account] < amount){
+            revert BurnError("BEP20: burn amount exceeds balance");
+        }
 
         _beforeTokenTransfer(account, address(0), amount);
 
@@ -368,8 +393,12 @@ contract ERC20 is Context, IERC20 {
      * - `spender` cannot be the zero address.
      */
     function _approve(address owner, address spender, uint256 amount) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
+        if(owner == address(0)) {
+            revert ApproveError("BEP20: approve from the zero address");
+        }
+        if(spender == address(0)) {
+            revert ApproveError("BEP20: approve to the zero address");
+        }
 
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
@@ -432,7 +461,9 @@ abstract contract ERC20Burnable is Context, ERC20 {
      * `amount`.
      */
     function burnFrom(address account, uint256 amount) public virtual {
-        require(allowance(account, _msgSender()) >= amount, "ERC20: burn amount exceeds allowance");
+        if(allowance(account, _msgSender()) < amount){
+            revert BurnError("ERC20: burn amount exceeds allowance");
+        }
         uint256 decreasedAllowance = allowance(account, _msgSender()) - amount;
 
         _approve(account, _msgSender(), decreasedAllowance);
@@ -509,7 +540,9 @@ abstract contract Ownable is Context {
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(owner() == _msgSender(), "Ownable: caller is not the owner");
+        if(owner() != _msgSender()){
+            revert NotOwner();
+        }
         _;
     }
 
@@ -530,7 +563,9 @@ abstract contract Ownable is Context {
      * Can only be called by the current owner.
      */
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        if(newOwner == address(0)) {
+            revert ZeroAddress();
+        }
         emit OwnershipTransferred(_owner, newOwner);
         _owner = newOwner;
     }
@@ -553,7 +588,9 @@ contract Operator is Context, Ownable {
     }
 
     modifier onlyOperator() {
-        require(_operator == msg.sender, "operator: caller is not the operator");
+        if(_operator != msg.sender){
+            revert NotOperator();
+        }
         _;
     }
 
@@ -566,7 +603,9 @@ contract Operator is Context, Ownable {
     }
 
     function _transferOperator(address newOperator_) internal {
-        require(newOperator_ != address(0), "operator: zero address given for new operator");
+        if(newOperator_ == address(0)){
+            revert ZeroAddress();
+        }
         emit OperatorTransferred(address(0), newOperator_);
         _operator = newOperator_;
     }
