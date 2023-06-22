@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
+error NotNewTokenOwner();
+error NotOldTokenOwner();
+error NotEnoughTokens();
 /**
  * @dev Interface of the ERC721 standard as defined in the EIP.
  */
@@ -68,10 +71,14 @@ contract FractalMigrator{
 
     modifier onlyOwner(bool isNew) {
         if(isNew) {
-            require(owner == msg.sender, "Only the contract owner can withdraw new tokens.");
+            if(owner != msg.sender){
+                revert NotNewTokenOwner();
+            }
         }
         else {
-            require(owner == msg.sender, "Only the contract owner can withdraw old tokens.");
+            if(owner != msg.sender) {
+                revert NotOldTokenOwner();
+            }
         }
         _;
     }
@@ -99,10 +106,9 @@ contract FractalMigrator{
         }
 
         uint256 numNewTokens = newToken.balanceOf(address(this));
-        require(
-            numNewTokens >= _tokenIds.length,
-            "Not enough new tokens in contract"
-        );
+        if(numNewTokens < _tokenIds.length){
+            revert NotEnoughTokens();
+        }
         for (uint256 i = _tokenIds.length - 1; i >= 0; i--) {
             uint256 newTokenId = IERC721Enumerable(address(newToken))
                 .tokenOfOwnerByIndex(address(this), i);

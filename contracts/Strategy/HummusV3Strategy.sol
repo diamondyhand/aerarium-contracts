@@ -1,5 +1,18 @@
 // SPDX-License-Identifier: MIT
 
+error InsufficientBalance();
+error UnableToSendValue();
+error NonContractCall();
+error ApproveError(string message);
+error OptionalReturn(string message);
+error ZeroAddress();
+error ZeroAmount();
+error NotBenevolent();
+error NotAuthorized();
+error NotDepositor();
+error WantAddress();
+error NotGovernance();
+
 /**
  * @dev Interface of the MasterHummusV2
  */
@@ -116,17 +129,15 @@ library Address {
      * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(
-            address(this).balance >= amount,
-            "Address: insufficient balance"
-        );
+        if(address(this).balance < amount) {
+            revert InsufficientBalance();
+        }
 
         // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
         (bool success, ) = recipient.call{value: amount}("");
-        require(
-            success,
-            "Address: unable to send value, recipient may have reverted"
-        );
+        if(!success) {
+            revert UnableToSendValue();
+        }
     }
 
     /**
@@ -205,11 +216,12 @@ library Address {
         uint256 value,
         string memory errorMessage
     ) internal returns (bytes memory) {
-        require(
-            address(this).balance >= value,
-            "Address: insufficient balance for call"
-        );
-        require(isContract(target), "Address: call to non-contract");
+        if(address(this).balance < value) {
+           revert InsufficientBalance();
+        }
+        if(!isContract(target)) {
+            revert NonContractCall();
+        }
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returndata) = target.call{value: value}(
@@ -247,7 +259,9 @@ library Address {
         bytes memory data,
         string memory errorMessage
     ) internal view returns (bytes memory) {
-        require(isContract(target), "Address: static call to non-contract");
+        if(!isContract(target)) {
+            revert NonContractCall();
+        }
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returndata) = target.staticcall(data);
@@ -283,7 +297,9 @@ library Address {
         bytes memory data,
         string memory errorMessage
     ) internal returns (bytes memory) {
-        require(isContract(target), "Address: delegate call to non-contract");
+        if(!isContract(target)) {
+            revert NonContractCall();
+        }
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returndata) = target.delegatecall(data);
@@ -364,10 +380,10 @@ library SafeERC20 {
         // or when resetting it to zero. To increase and decrease it, use
         // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
         // solhint-disable-next-line max-line-length
-        require(
-            (value == 0) || (token.allowance(address(this), spender) == 0),
-            "SafeERC20: approve from non-zero to non-zero allowance"
-        );
+        if((value > 0) && (token.allowance(address(this), spender) > 0))
+        {
+            revert ApproveError("SafeERC20: approve from non-zero to non-zero allowance");
+        }
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(token.approve.selector, spender, value)
@@ -397,8 +413,11 @@ library SafeERC20 {
         address spender,
         uint256 value
     ) internal {
-        require(token.allowance(address(this), spender) >= value, "SafeERC20: decreased allowance below zero");
-        uint256 newAllowance = token.allowance(address(this), spender) - value;
+        uint256 oldAllowance = token.allowance(address(this), spender);
+        if(oldAllowance < value) {
+            revert ApproveError("SafeBEP20: decreased allowance below zero");
+        }
+        uint256 newAllowance = oldAllowance - value;
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(
@@ -424,13 +443,9 @@ library SafeERC20 {
             data,
             "SafeERC20: low-level call failed"
         );
-        if (returndata.length > 0) {
-            // Return data is optional
-            // solhint-disable-next-line max-line-length
-            require(
-                abi.decode(returndata, (bool)),
-                "SafeERC20: ERC20 operation did not succeed"
-            );
+        if(returndata.length > 0 && !abi.decode(returndata, (bool))
+        ) {
+            revert OptionalReturn("SafeBEP20: operation did not succeed");
         }
     }
 }
@@ -638,8 +653,9 @@ abstract contract StrategyBase {
     mapping(address => bool) public harvesters;
 
     constructor(address _want, address _depositor) {
-        require(_want != address(0));
-        require(_depositor != address(0));
+        if(_want == address(0) || _depositor == address(0)){
+            revert ZeroAddress();
+        }
 
         want = _want;
         depositor = _depositor;
@@ -649,11 +665,11 @@ abstract contract StrategyBase {
     // **** Modifiers **** //
 
     modifier onlyBenevolent() {
-        require(
-            harvesters[msg.sender] ||
+        if(!(harvesters[msg.sender] ||
                 msg.sender == governance ||
-                msg.sender == depositor
-        );
+                msg.sender == depositor)) {
+            revert NotBenevolent();
+        }
         _;
     }
 
@@ -672,14 +688,18 @@ abstract contract StrategyBase {
     // **** Setters **** //
 
     function whitelistHarvesters(address[] calldata _harvesters) external {
-        require(msg.sender == governance, "not authorized");
+        if(msg.sender != governance){
+            revert NotAuthorized();
+        }
         for (uint i = 0; i < _harvesters.length; i++) {
             harvesters[_harvesters[i]] = true;
         }
     }
 
     function revokeHarvesters(address[] calldata _harvesters) external {
-        require(msg.sender == governance, "not authorized");
+        if(msg.sender != governance){
+            revert NotAuthorized();
+        }
 
         for (uint i = 0; i < _harvesters.length; i++) {
             harvesters[_harvesters[i]] = false;
@@ -687,12 +707,16 @@ abstract contract StrategyBase {
     }
 
     function setGovernance(address _governance) external {
-        require(msg.sender == governance, "!governance");
+        if(msg.sender != governance){
+            revert NotAuthorized();
+        }
         governance = _governance;
     }
 
     function setDepositor(address _depositor) external {
-        require(msg.sender == governance, "!governance");
+        if(msg.sender != governance){
+            revert NotAuthorized();
+        }
         depositor = _depositor;
     }
 
@@ -703,14 +727,18 @@ abstract contract StrategyBase {
     function withdrawAssets(
         IERC20 _asset
     ) external onlyBenevolent returns (uint256 balance) {
-        require(want != address(_asset), "want");
+        if(want == address(_asset)){
+            revert WantAddress();
+        }
         balance = _asset.balanceOf(address(this));
         _asset.safeTransfer(depositor, balance);
     }
 
     // Withdraw partial funds
     function withdrawTokens(uint256 _amount) external returns (uint256) {
-        require(msg.sender == depositor, "!depositor");
+        if(msg.sender != depositor){
+            revert NotDepositor();
+        }
         uint256 _balance = IERC20(want).balanceOf(address(this));
         if (_balance < _amount) {
             _amount = _withdrawSome(_amount - (_balance));
@@ -724,7 +752,9 @@ abstract contract StrategyBase {
 
     // Withdraw all funds, normally used when migrating strategies
     function withdrawAll() external returns (uint256 balance) {
-        require(msg.sender == governance, "!governance");
+        if(msg.sender != governance){
+           revert NotGovernance(); 
+        }
         _withdrawAll();
 
         balance = IERC20(want).balanceOf(address(this));
@@ -812,9 +842,11 @@ abstract contract StrategyGeneralMasterChefBase is StrategyBase {
         IERC20(rewardToken).transfer(devAddress, _rewardBalance);
     }
 
-    function harvestNativeToken() public payable {
+    function harvestNativeToken() public payable onlyBenevolent{
         uint256 amount = msg.value;
-        require(amount > 0, "Amount should be greater than 0");
+        if(amount == 0){
+            revert ZeroAmount();
+        }
         payable(msg.sender).transfer(amount);
     }
 

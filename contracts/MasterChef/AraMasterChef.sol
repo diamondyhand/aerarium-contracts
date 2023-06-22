@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 /**
  * @dev Contract module that helps prevent reentrant calls to a function.
  *
@@ -15,6 +17,30 @@
  * https://blog.openzeppelin.com/reentrancy-after-istanbul/[Reentrancy After Istanbul].
  */
 pragma solidity 0.8.18;
+error InsufficientBalance();
+error UnableToSendValue();
+error NonContractCall();
+error ReentrantCall();
+error ApproveError(string message);
+error OptionalReturn(string message);
+error NotOwner();
+error ZeroAddress();
+error BEP20InsufficientAllowance();
+error BEP20AllowanceBelowZero();
+error TransferError(string message);
+error BurnError(string message);
+error MintError(string message);
+error BoringERC20TransferFailed();
+error BoringERC20TransferFromfailed();
+error InvalidDepositFeeBasisPoints();
+error WithdrawNotGood();
+error InsufficientRewardTokens();
+error NotDevAddr();
+error WrongBalance();
+error WrongLpToken();
+error DifferentBalance();
+error NotZeroBalance();
+error ForbiddenSetFeeAddr();
 abstract contract ReentrancyGuard {
     // Booleans are more expensive than uint256 or any type that takes up a full
     // word because each write operation emits an extra SLOAD to first read the
@@ -45,7 +71,9 @@ abstract contract ReentrancyGuard {
      */
     modifier nonReentrant() {
         // On the first call to nonReentrant, _notEntered will be true
-        require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
+        if(_status == _ENTERED) {
+            revert ReentrantCall();
+        }
 
         // Any calls to nonReentrant after this point will fail
         _status = _ENTERED;
@@ -239,17 +267,15 @@ library Address {
      * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(
-            address(this).balance >= amount,
-            "Address: insufficient balance"
-        );
+        if(address(this).balance < amount) {
+            revert InsufficientBalance();
+        }
 
         // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
         (bool success, ) = recipient.call{value: amount}("");
-        require(
-            success,
-            "Address: unable to send value, recipient may have reverted"
-        );
+        if(!success) {
+            revert UnableToSendValue();
+        }
     }
 
     /**
@@ -328,11 +354,12 @@ library Address {
         uint256 value,
         string memory errorMessage
     ) internal returns (bytes memory) {
-        require(
-            address(this).balance >= value,
-            "Address: insufficient balance for call"
-        );
-        require(isContract(target), "Address: call to non-contract");
+        if(address(this).balance < value) {
+           revert InsufficientBalance();
+        }
+        if(!isContract(target)) {
+            revert NonContractCall();
+        }
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returndata) = target.call{value: value}(
@@ -370,7 +397,9 @@ library Address {
         bytes memory data,
         string memory errorMessage
     ) internal view returns (bytes memory) {
-        require(isContract(target), "Address: static call to non-contract");
+        if(!isContract(target)) {
+            revert NonContractCall();
+        }
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returndata) = target.staticcall(data);
@@ -439,10 +468,10 @@ library SafeBEP20 {
         // or when resetting it to zero. To increase and decrease it, use
         // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
         // solhint-disable-next-line max-line-length
-        require(
-            (value == 0) || (token.allowance(address(this), spender) == 0),
-            "SafeBEP20: approve from non-zero to non-zero allowance"
-        );
+        if((value > 0) && (token.allowance(address(this), spender) > 0))
+        {
+            revert ApproveError("SafeBEP20: approve from non-zero to non-zero allowance");
+        }
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(token.approve.selector, spender, value)
@@ -472,8 +501,11 @@ library SafeBEP20 {
         address spender,
         uint256 value
     ) internal {
-        require(token.allowance(address(this), spender) >= value, "SafeBEP20: decreased allowance below zero");
-        uint256 newAllowance = token.allowance(address(this), spender) - value;
+        uint256 oldAllowance = token.allowance(address(this), spender);
+        if(oldAllowance < value) {
+            revert ApproveError("SafeBEP20: decreased allowance below zero");
+        }
+        uint256 newAllowance = oldAllowance - value;
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(
@@ -499,13 +531,10 @@ library SafeBEP20 {
             data,
             "SafeBEP20: low-level call failed"
         );
-        if (returndata.length > 0) {
-            // Return data is optional
-            // solhint-disable-next-line max-line-length
-            require(
-                abi.decode(returndata, (bool)),
-                "SafeBEP20: BEP20 operation did not succeed"
-            );
+        if(
+            returndata.length > 0 && !abi.decode(returndata, (bool))
+        ) {
+            revert OptionalReturn("SafeBEP20: operation did not succeed");
         }
     }
 }
@@ -549,7 +578,9 @@ abstract contract Ownable is Context {
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(_owner == _msgSender(), "Ownable: caller is not the owner");
+        if(owner() != _msgSender()){
+            revert NotOwner();
+        }
         _;
     }
 
@@ -570,10 +601,9 @@ abstract contract Ownable is Context {
      * Can only be called by the current owner.
      */
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(
-            newOwner != address(0),
-            "Ownable: new owner is the zero address"
-        );
+        if(newOwner == address(0)) {
+            revert ZeroAddress();
+        }
         emit OwnershipTransferred(_owner, newOwner);
         _owner = newOwner;
     }
@@ -707,7 +737,9 @@ contract BEP20 is Context, IBEP20, Ownable {
         address recipient,
         uint256 amount
     ) public override returns (bool) {
-        require(_allowances[sender][_msgSender()] >= amount, "BEP20: transfer amount exceeds allowance");
+        if(_allowances[sender][_msgSender()] < amount){
+            revert BEP20InsufficientAllowance(); 
+        }
         _transfer(sender, recipient, amount);
         _approve(
             sender,
@@ -759,8 +791,9 @@ contract BEP20 is Context, IBEP20, Ownable {
         address spender,
         uint256 subtractedValue
     ) public returns (bool) {
-        require(_allowances[_msgSender()][spender] >= subtractedValue, 
-            "BEP20: decreased allowance below zero");
+        if(_allowances[_msgSender()][spender] < subtractedValue){
+            revert BEP20AllowanceBelowZero();
+        }
         _approve(
             _msgSender(),
             spender,
@@ -801,9 +834,15 @@ contract BEP20 is Context, IBEP20, Ownable {
         address recipient,
         uint256 amount
     ) internal {
-        require(sender != address(0), "BEP20: transfer from the zero address");
-        require(recipient != address(0), "BEP20: transfer to the zero address");
-        require(_balances[sender] >= amount, "BEP20: transfer amount exceeds balance");
+        if(sender == address(0)){
+            revert TransferError("BEP20: transfer from the zero address");
+        }
+        if(recipient == address(0)){
+            revert TransferError("BEP20: transfer to the zero address");
+        }
+        if(_balances[sender] < amount){
+            revert TransferError("BEP20: transfer amount exceeds balance");
+        }
         _balances[sender] = _balances[sender] - amount;
         _balances[recipient] = _balances[recipient] + (amount);
         emit Transfer(sender, recipient, amount);
@@ -819,7 +858,9 @@ contract BEP20 is Context, IBEP20, Ownable {
      * - `to` cannot be the zero address.
      */
     function _mint(address account, uint256 amount) internal {
-        require(account != address(0), "BEP20: mint to the zero address");
+        if(account == address(0)) {
+            revert MintError("BEP20: mint to the zero address");
+        }
 
         _totalSupply = _totalSupply + (amount);
         _balances[account] = _balances[account] + (amount);
@@ -838,8 +879,12 @@ contract BEP20 is Context, IBEP20, Ownable {
      * - `account` must have at least `amount` tokens.
      */
     function _burn(address account, uint256 amount) internal {
-        require(account != address(0), "BEP20: burn from the zero address");
-        require(_balances[account] >= amount, "BEP20: burn amount exceeds balance");
+        if(account == address(0)) {
+            revert BurnError("BEP20: burn from the zero address");
+        }
+        if(_balances[account] < amount){
+            revert BurnError("BEP20: burn amount exceeds balance");
+        }
         _balances[account] = _balances[account] - amount;
         _totalSupply = _totalSupply - (amount);
         emit Transfer(account, address(0), amount);
@@ -859,8 +904,12 @@ contract BEP20 is Context, IBEP20, Ownable {
      * - `spender` cannot be the zero address.
      */
     function _approve(address owner, address spender, uint256 amount) internal {
-        require(owner != address(0), "BEP20: approve from the zero address");
-        require(spender != address(0), "BEP20: approve to the zero address");
+        if(owner == address(0)) {
+            revert ApproveError("BEP20: approve from the zero address");
+        }
+        if(spender == address(0)) {
+            revert ApproveError("BEP20: approve to the zero address");
+        }
 
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
@@ -873,7 +922,9 @@ contract BEP20 is Context, IBEP20, Ownable {
      * See {_burn} and {_approve}.
      */
     function _burnFrom(address account, uint256 amount) internal {
-        require(_allowances[account][_msgSender()] >= amount, "BEP20: burn amount exceeds allowance");
+        if(_allowances[account][_msgSender()] < amount){
+            revert BurnError("BEP20: burn amount exceeds balance");
+        }
         _burn(account, amount);
         _approve(
             account,
@@ -994,10 +1045,9 @@ library BoringERC20 {
         (bool success, bytes memory data) = address(token).call(
             abi.encodeWithSelector(0xa9059cbb, to, amount)
         );
-        require(
-            success && (data.length == 0 || abi.decode(data, (bool))),
-            "BoringERC20: Transfer failed"
-        );
+        if(!success || !(data.length == 0 || abi.decode(data, (bool)))){
+            revert BoringERC20TransferFailed();
+        }
     }
 
     function safeTransferFrom(
@@ -1009,10 +1059,9 @@ library BoringERC20 {
         (bool success, bytes memory data) = address(token).call(
             abi.encodeWithSelector(0x23b872dd, from, to, amount)
         );
-        require(
-            success && (data.length == 0 || abi.decode(data, (bool))),
-            "BoringERC20: TransferFrom failed"
-        );
+        if(!success || !(data.length == 0 || abi.decode(data, (bool)))){
+            revert BoringERC20TransferFromfailed();
+        }
     }
 }
 
@@ -1162,7 +1211,6 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     );
     
     error InvalidPoolId();
-    error ZeroAddress();
 
     constructor(
         IERC20 _ara,
@@ -1194,10 +1242,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         if(_lpToken == address(0) || address(_strategy) == address(0)) {
             revert ZeroAddress();
         }
-        require(
-            _depositFeeBP <= 10000,
-            "add: invalid deposit fee basis points"
-        );
+        if(_depositFeeBP > 10000){
+            revert InvalidDepositFeeBasisPoints();
+        }
         if (_withUpdate) {
             massUpdatePools();
         }
@@ -1232,10 +1279,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         if(_pid >= poolInfo.length) {
             revert InvalidPoolId();
         }
-        require(
-            _depositFeeBP <= 10000,
-            "set: invalid deposit fee basis points"
-        );
+        if(_depositFeeBP > 10000){
+            revert InvalidDepositFeeBasisPoints();
+        }
         if (_withUpdate) {
             massUpdatePools();
         }
@@ -1394,7 +1440,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         }
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.amount >= _amount, "withdraw: not good");
+        if(user.amount < _amount){
+            revert WithdrawNotGood();
+        }
         uint256 balance = pool.lpToken.balanceOf(address(this));
         IStrategy strategy = strategies[_pid];
         updatePool(_pid);
@@ -1441,22 +1489,25 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     // Safe ara transfer function, just in case if rounding error causes pool to not have enough ARAs.
     function safeAraTransfer(address _to, uint256 _amount) internal {
         uint256 araBal = ara.balanceOf(address(this));
-        require(
-            araBal >= _amount && _amount > 0,
-            "Insufficient Reward tokens available for transfer."
-        );
+        if(!(araBal >= _amount && _amount > 0)){
+            revert InsufficientRewardTokens();
+        }
         ara.safeTransfer(_to, araBal);
     }
 
     // Update dev address by the previous dev.
     function dev(address _devaddr) external {
-        require(msg.sender == devaddr, "dev: wut?");
+        if(msg.sender != devaddr) {
+            revert NotDevAddr();
+        }
         devaddr = _devaddr;
         emit SetDevAddress(msg.sender, _devaddr);
     }
 
     function setFeeAddress(address _feeAddress) external {
-        require(msg.sender == feeAddress, "setFeeAddress: FORBIDDEN");
+        if(msg.sender != feeAddress){
+            revert ForbiddenSetFeeAddr();
+        }
         feeAddress = _feeAddress;
         emit SetFeeAddress(msg.sender, _feeAddress);
     }
@@ -1481,7 +1532,9 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         IERC20 _lpToken = lpToken[_pid];
         uint256 _strategyBalanceBefore = _strategy.balanceOf();
         uint256 _balanceBefore = _lpToken.balanceOf(address(this));
-        require(address(_lpToken) == _strategy.want(), "!lpToken");
+        if(address(_lpToken) != _strategy.want()){
+            revert WrongLpToken();
+        }
 
         if (_balanceBefore > 0) {
             _lpToken.safeTransfer(address(_strategy), _balanceBefore);
@@ -1492,10 +1545,14 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
                 _strategyBalanceBefore
             );
 
-            require(_strategyBalanceDiff == _balanceBefore, "!balance1");
+            if(_strategyBalanceDiff != _balanceBefore){
+                revert DifferentBalance();
+            }
 
             uint256 _balanceAfter = _lpToken.balanceOf(address(this));
-            require(_balanceAfter == 0, "!balance2");
+            if(_balanceAfter != 0){
+                revert NotZeroBalance();
+            }
         }
     }
 
@@ -1505,16 +1562,22 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     ) internal {
         IERC20 _lpToken = lpToken[_pid];
         uint256 _strategyBalance = _strategy.balanceOf();
-        require(address(_lpToken) == _strategy.want(), "!lpToken");
+        if(address(_lpToken) != _strategy.want()){
+            revert WrongLpToken();
+        }
 
         if (_strategyBalance > 0) {
             _strategy.withdraw(_strategyBalance);
             uint256 _currentBalance = _lpToken.balanceOf(address(this));
 
-            require(_currentBalance >= _strategyBalance, "!balance1");
+            if(_currentBalance < _strategyBalance){
+                revert WrongBalance();
+            }
 
             _strategyBalance = _strategy.balanceOf();
-            require(_strategyBalance == 0, "!balance2");
+            if(_strategyBalance > 0){
+                revert NotZeroBalance();
+            }
         }
     }
 }

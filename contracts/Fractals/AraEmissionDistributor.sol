@@ -12,13 +12,25 @@ import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
+error NotEnteredState();
+error AttachedError();
+error NotApprovedNorOwner();
+error ZeroAddress();
+error IsCurrentOwner();
+error NotVoter();
+error NotEqualToAmountTobeLocked();
+error NotCanCreateFractalsTrue();
+error ZeroDeposit();
+error QueryTokenNonexistent();
+error AlreadyOwnedToken();
+error NotTokenOwner();
+error OperatorIsSender();
+error BlockIntheFuture();
+
 contract ve is IERC721, IERC721Metadata, Ownable {
     using SafeERC20 for IERC20;
     enum DepositType {
-        DEPOSIT_FOR_TYPE,
         CREATE_LOCK_TYPE,
-        INCREASE_LOCK_AMOUNT,
-        INCREASE_UNLOCK_TIME,
         MERGE_TYPE
     }
 
@@ -115,7 +127,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     uint8 internal constant _entered = 2;
     uint8 internal _entered_state = 1;
     modifier nonreentrant() {
-        require(_entered_state == _not_entered);
+        if(_entered_state != _not_entered){
+            revert NotEnteredState();
+        }
         _entered_state = _entered;
         _;
         _entered_state = _not_entered;
@@ -300,7 +314,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     ///      Throws if `_tokenId` is owned by someone.
     function _addTokenTo(address _to, uint _tokenId) internal {
         // Throws if `_tokenId` is owned by someone
-        assert(idToOwner[_tokenId] == address(0));
+        if(idToOwner[_tokenId] != address(0)) {
+            revert AlreadyOwnedToken();
+        }
         // Change the owner
         idToOwner[_tokenId] = _to;
         // Update owner token index tracking
@@ -313,7 +329,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     ///      Throws if `_from` is not the current owner.
     function _removeTokenFrom(address _from, uint _tokenId) internal {
         // Throws if `_from` is not the current owner
-        assert(idToOwner[_tokenId] == _from);
+        if(idToOwner[_tokenId] != _from){
+            revert NotTokenOwner();
+        }
         // Change the owner
         idToOwner[_tokenId] = address(0);
         // Update owner token index tracking
@@ -326,7 +344,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     ///      Throws if `_owner` is not the current owner.
     function _clearApproval(address _owner, uint _tokenId) internal {
         // Throws if `_owner` is not the current owner
-        assert(idToOwner[_tokenId] == _owner);
+        if(idToOwner[_tokenId] != _owner) {
+            revert NotTokenOwner();
+        }
         if (idToApprovals[_tokenId] != address(0)) {
             // Reset approvals
             idToApprovals[_tokenId] = address(0);
@@ -345,9 +365,13 @@ contract ve is IERC721, IERC721Metadata, Ownable {
         uint _tokenId,
         address _sender
     ) internal {
-        require(attachments[_tokenId] == 0 && !voted[_tokenId], "attached");
+        if(attachments[_tokenId] > 0 || voted[_tokenId]) {
+            revert AttachedError();
+        }
         // Check requirements
-        require(_isApprovedOrOwner(_sender, _tokenId));
+        if(!_isApprovedOrOwner(_sender, _tokenId)) {
+            revert NotApprovedNorOwner();
+        }
         // Clear approval. Throws if `_from` is not the current owner
         _clearApproval(_from, _tokenId);
         // Remove NFT. Throws if `_tokenId` is not a valid NFT
@@ -456,13 +480,19 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     function approve(address _approved, uint _tokenId) public {
         address owner = idToOwner[_tokenId];
         // Throws if `_tokenId` is not a valid NFT
-        require(owner != address(0));
+        if(owner == address(0)) {
+            revert ZeroAddress();
+        }
         // Throws if `_approved` is the current owner
-        require(_approved != owner);
+        if(_approved == owner){
+            revert IsCurrentOwner();
+        }
         // Check requirements
         bool senderIsOwner = (idToOwner[_tokenId] == msg.sender);
         bool senderIsApprovedForAll = (ownerToOperators[owner])[msg.sender];
-        require(senderIsOwner || senderIsApprovedForAll);
+        if(!senderIsOwner && !senderIsApprovedForAll) {
+            revert NotApprovedNorOwner();
+        }
         // Set the approval
         idToApprovals[_tokenId] = _approved;
         emit Approval(owner, _approved, _tokenId);
@@ -476,7 +506,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _approved True if the operators is approved, false to revoke approval.
     function setApprovalForAll(address _operator, bool _approved) external {
         // Throws if `_operator` is the `msg.sender`
-        assert(_operator != msg.sender);
+        if(_operator == msg.sender) {
+            revert OperatorIsSender();
+        }
         ownerToOperators[msg.sender][_operator] = _approved;
         emit ApprovalForAll(msg.sender, _operator, _approved);
     }
@@ -489,7 +521,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @return A boolean that indicates if the operation was successful.
     function _mint(address _to, uint _tokenId) internal returns (bool) {
         // Throws if `_to` is zero address
-        assert(_to != address(0));
+        if(_to == address(0)) {
+            revert ZeroAddress();
+        }
         // Add NFT. Throws if `_tokenId` is owned by someone
         _addTokenTo(_to, _tokenId);
         emit Transfer(address(0), _to, _tokenId);
@@ -545,22 +579,30 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     }
 
     function setVoter(address _voter) external {
-        require(msg.sender == voter);
+        if(msg.sender != voter) {
+            revert NotVoter();
+        }
         voter = _voter;
     }
 
     function voting(uint _tokenId) external {
-        require(msg.sender == voter);
+        if(msg.sender != voter) {
+            revert NotVoter();
+        }
         voted[_tokenId] = true;
     }
 
     function attach(uint _tokenId) external {
-        require(msg.sender == voter);
+        if(msg.sender != voter) {
+            revert NotVoter();
+        }
         attachments[_tokenId] = attachments[_tokenId] + 1;
     }
 
     function detach(uint _tokenId) external {
-        require(msg.sender == voter);
+        if(msg.sender != voter) {
+            revert NotVoter();
+        }
         attachments[_tokenId] = attachments[_tokenId] - 1;
     }
 
@@ -572,12 +614,15 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _value Amount to deposit
     /// @param _to Address to deposit
     function _create_lock(uint _value, address _to) internal returns (uint) {
-        require(
-            _value == amountTobeLocked,
-            "The value must equal to amountTobeLocked"
-        );
-        require(canCreateFractals == true, "canCreateFractals must be true");
-        require(_value > 0); // dev: need non-zero value
+        if(_value != amountTobeLocked){
+            revert NotEqualToAmountTobeLocked();
+        }
+        if(canCreateFractals != true){
+            revert NotCanCreateFractalsTrue();
+        }
+        if(_value == 0) {
+            revert ZeroDeposit();
+        }
 
         ++tokenId;
         uint _tokenId = tokenId;
@@ -665,10 +710,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @dev Returns current token URI metadata
     /// @param _tokenId Token ID to fetch URI for.
     function tokenURI(uint _tokenId) external view returns (string memory) {
-        require(
-            idToOwner[_tokenId] != address(0),
-            "Query for nonexistent token"
-        );
+        if(idToOwner[_tokenId] == address(0)){
+            revert QueryTokenNonexistent();
+        }
         LockedBalance memory _locked = locked[_tokenId];
         return
             _tokenURI(
@@ -702,7 +746,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     ) internal view returns (uint) {
         // Copying and pasting totalSupply code because Vyper cannot pass by
         // reference yet
-        assert(_block <= block.number);
+        if(_block > block.number) {
+            revert BlockIntheFuture();
+        }
 
         // Binary search
         uint _min = 0;
@@ -806,7 +852,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     /// @param _block Block to calculate the total voting power at
     /// @return Total voting power at `_block`
     function totalSupplyAt(uint _block) external view returns (uint) {
-        assert(_block <= block.number);
+        if(_block > block.number){
+            revert BlockIntheFuture();
+        }
         uint _epoch = epoch;
         uint target_epoch = _find_block_epoch(_block, _epoch);
 
@@ -911,10 +959,9 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     }
 
     function _burn(uint _tokenId) internal {
-        require(
-            _isApprovedOrOwner(msg.sender, _tokenId),
-            "caller is not owner nor approved"
-        );
+        if(!_isApprovedOrOwner(msg.sender, _tokenId)){
+            revert NotApprovedNorOwner();
+        }
 
         address owner = ownerOf(_tokenId);
 
@@ -1341,7 +1388,7 @@ contract AraEmissionDistributor is AccessControl, Ownable {
                     poolAnotherToken.allocPoint) / totalAnotherAllocPoint;
 
                 uint256 anotherTokenRewardsForPool = (anotherTokenRewards *
-                    DENOMINATOR) / DENOMINATOR;
+                    POOL_PERCENTAGE) / DENOMINATOR;
 
                 poolAnotherToken.accAnotherTokenPerShare =
                     poolAnotherToken.accAnotherTokenPerShare +
