@@ -1080,6 +1080,8 @@ interface IStrategy {
 
     function withdraw(address) external returns (uint256);
 
+    function withdrawTokens(uint256) external returns (uint256);
+
     function withdraw(uint256) external returns (uint256);
 
     function skim() external;
@@ -1199,7 +1201,6 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     event SetFeeAddress(address indexed user, address indexed newAddress);
     event SetDevAddress(address indexed user, address indexed newAddress);
     event UpdateEmissionRate(address indexed user, uint256 araPerBlock);
-
     event AddPool(
         uint256 indexed pid,
         uint256 allocPoint,
@@ -1209,8 +1210,16 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         uint256 indexed pid,
         uint256 allocPoint
     );
-    
+
+    // New events for tracking storage changes
+    event SetMultiplier(uint256 bonusMultiplier);
+    event SetAraPerBlock(uint256 araPerBlock);
+
+    error ZeroAddress();
+    error InvalidDepositFeeBasisPoints();
     error InvalidPoolId();
+    error WithdrawNotGood();
+    error NotEnoughRewardBalance();
 
     constructor(
         IERC20 _ara,
@@ -1312,6 +1321,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
 
     function setMultiplier(uint256 _BONUS_MULTIPLIER) public onlyOwner {
         BONUS_MULTIPLIER = _BONUS_MULTIPLIER;
+        emit SetMultiplier(_BONUS_MULTIPLIER);
     }
 
     // View function to see pending ARAs on frontend.
@@ -1456,7 +1466,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
             user.amount = user.amount - (_amount);
             if (_amount > balance) {
                 uint256 missing = _amount - (balance);
-                uint256 withdrawn = strategy.withdraw(missing);
+                uint256 withdrawn = strategy.withdrawTokens(missing);
                 _amount = balance + (withdrawn);
             }
             pool.lpToken.safeTransfer(address(msg.sender), _amount);
@@ -1479,7 +1489,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         IStrategy strategy = strategies[_pid];
         if (amount > balance) {
             uint256 missing = amount - (balance);
-            uint256 withdrawn = strategy.withdraw(missing);
+            uint256 withdrawn = strategy.withdrawTokens(missing);
             amount = balance + (withdrawn);
         }
         pool.lpToken.safeTransfer(address(msg.sender), amount);
@@ -1489,10 +1499,11 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
     // Safe ara transfer function, just in case if rounding error causes pool to not have enough ARAs.
     function safeAraTransfer(address _to, uint256 _amount) internal {
         uint256 araBal = ara.balanceOf(address(this));
-        if(!(araBal >= _amount && _amount > 0)){
-            revert InsufficientRewardTokens();
+        if(_amount > araBal) {
+            ara.safeTransfer(_to, araBal);
+        } else {
+            ara.safeTransfer(_to, _amount);
         }
-        ara.safeTransfer(_to, araBal);
     }
 
     // Update dev address by the previous dev.
@@ -1517,6 +1528,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         massUpdatePools();
         araPerBlock = _araPerBlock;
         emit UpdateEmissionRate(msg.sender, _araPerBlock);
+        emit SetAraPerBlock(_araPerBlock);
     }
 
     function massHarvestFromStrategies(uint256[] memory pids) external {
@@ -1567,7 +1579,7 @@ contract AraMasterChef is Ownable, ReentrancyGuard {
         }
 
         if (_strategyBalance > 0) {
-            _strategy.withdraw(_strategyBalance);
+            _strategy.withdrawTokens(_strategyBalance);
             uint256 _currentBalance = _lpToken.balanceOf(address(this));
 
             if(_currentBalance < _strategyBalance){

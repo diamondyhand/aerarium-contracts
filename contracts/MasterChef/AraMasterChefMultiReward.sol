@@ -1057,6 +1057,8 @@ interface IStrategy {
 
     function withdraw(uint256) external returns (uint256);
 
+    function withdrawTokens(uint256) external returns (uint256);
+
     function skim() external;
 
     function withdrawAll() external returns (uint256);
@@ -1130,7 +1132,8 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
         mapping(address => uint256) accRewardPerShare; // Accumulated rewards per share, times 1e12, for each token.
         uint16 depositFeeBP; // Deposit fee in basis points
     }
-    // Bonus muliplier for early ara makers.
+
+    // Bonus multiplier for early ara makers.
     uint256 public BONUS_MULTIPLIER = 1;
     // Deposit Fee address
     address public feeAddress;
@@ -1179,13 +1182,19 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
     event SetFeeAddress(
         address indexed feeAddress
     );
+    event SetMultiplier(
+        uint256 multiplier
+    );
 
     error InvalidPoolId();
+    error ZeroAddress();
+    error InvalidDepositFeeBasisPoints();
+    error InvalidRewardPerBlock();
+    error WithdrawNotGood();
+    error NotEnoughRewardBalance();
 
     constructor(address _feeAddress) {
-        if(_feeAddress == address(0)) {
-            revert ZeroAddress();
-        }
+        require(_feeAddress != address(0), "ZERO_ADDRESS");
         feeAddress = _feeAddress;
     }
 
@@ -1201,19 +1210,11 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
         bool _withUpdate,
         address[] memory _rewardTokens
     ) external onlyOwner {
-        if(address(_lpToken) == address(0)) {
-            revert ZeroAddress();
-        }
-        if(address(_strategy) == address(0)) {
-            revert ZeroAddress();
-        }
-        if(_depositFeeBP > 10000){
-            revert InvalidDepositFeeBasisPoints();
-        }
+        require(address(_lpToken) != address(0), "ZERO_ADDRESS");
+        require(address(_strategy) != address(0), "ZERO_ADDRESS");
+        require(_depositFeeBP <= 10000, "InvalidDepositFeeBasisPoints");
         for (uint256 i = 0; i < _rewardTokens.length; i++) {
-            if(_rewardTokens[i] == address(0)){
-                revert ZeroAddress();
-            }
+            require(_rewardTokens[i] != address(0), "ZERO_ADDRESS");
         }
         if (_withUpdate) {
             massUpdatePools();
@@ -1222,8 +1223,19 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
         totalAllocPoint = totalAllocPoint + _allocPoint;
         strategies.push(_strategy);
         lpToken.push(IERC20(_lpToken));
-        uint poolId = poolInfo.length;
-        PoolInfo storage newPool = poolInfo[++poolId];
+
+        // Push an empty PoolInfo to poolInfo
+        poolInfo.push(PoolInfo({
+            lpToken: IERC20(address(0)),
+            allocPoint: 0,
+            lastRewardBlock: 0,
+            totalRewardDebt: 0,
+            rewardTokens: new address[](0),
+            depositFeeBP: 0
+        }));
+
+        uint poolId = poolInfo.length - 1;
+        PoolInfo storage newPool = poolInfo[poolId];
         newPool.lpToken = _lpToken;
         newPool.allocPoint = _allocPoint;
         newPool.lastRewardBlock = lastRewardBlock;
@@ -1250,24 +1262,16 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
         bool _withUpdate,
         address[] memory _rewardTokens
     ) external onlyOwner {
-        if(_pid >= poolInfo.length) {
-            revert InvalidPoolId();
-        }
-        if(_depositFeeBP > 10000){
-            revert InvalidDepositFeeBasisPoints();
-        }
+        require(_pid < poolInfo.length, "InvalidPoolId");
+        require(_depositFeeBP <= 10000, "InvalidDepositFeeBasisPoints");
         for (uint256 i = 0; i < _rewardTokens.length; i++) {
-            if(_rewardTokens[i] == address(0)){
-                revert ZeroAddress();
-            }
+            require(_rewardTokens[i] != address(0), "ZERO_ADDRESS");
         }
 
         if (_withUpdate) {
             massUpdatePools();
         }
-        totalAllocPoint = totalAllocPoint -  (poolInfo[_pid].allocPoint) + (
-            _allocPoint
-        );
+        totalAllocPoint = totalAllocPoint - poolInfo[_pid].allocPoint + _allocPoint;
         poolInfo[_pid].allocPoint = _allocPoint;
         poolInfo[_pid].rewardTokens = _rewardTokens;
         poolInfo[_pid].depositFeeBP = _depositFeeBP;
@@ -1291,12 +1295,8 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
         address _rewardToken,
         uint256 _rewardPerBlock
     ) external onlyOwner {
-        if(_rewardToken == address(0)){
-            revert ZeroAddress();
-        }
-        if(_rewardPerBlock == 0){
-            revert InvalidRewardPerBlock();
-        }
+        require(_rewardToken != address(0), "ZERO_ADDRESS");
+        require(_rewardPerBlock > 0, "InvalidRewardPerBlock");
 
         massUpdatePools();
         poolInfo[_pid].rewardTokens.push(_rewardToken);
@@ -1310,12 +1310,8 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
         address _rewardToken,
         uint256 _rewardPerBlock
     ) external onlyOwner {
-        if(_rewardToken == address(0)){
-            revert ZeroAddress();
-        }
-        if(_rewardPerBlock == 0){
-            revert InvalidRewardPerBlock();
-        }
+        require(_rewardToken != address(0), "ZERO_ADDRESS");
+        require(_rewardPerBlock > 0, "InvalidRewardPerBlock");
 
         massUpdatePools();
         poolInfo[_pid].accRewardPerShare[_rewardToken] = _rewardPerBlock;
@@ -1333,6 +1329,7 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
 
     function setMultiplier(uint256 _BONUS_MULTIPLIER) public onlyOwner {
         BONUS_MULTIPLIER = _BONUS_MULTIPLIER;
+        emit SetMultiplier(_BONUS_MULTIPLIER);
     }
 
     function pendingReward(
@@ -1340,6 +1337,7 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
         address _user,
         address _rewardToken
     ) external view returns (uint256) {
+        require(_pid < poolInfo.length, "InvalidPoolId");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accRewardPerShare = pool.accRewardPerShare[_rewardToken];
@@ -1357,17 +1355,14 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
                 block.timestamp
             );
             uint256 reward = multiplier
-                 * (rewardPerBlock[_rewardToken])
-                 * (pool.allocPoint)
-                 / (totalAllocPoint);
+                * rewardPerBlock[_rewardToken]
+                * pool.allocPoint
+                / totalAllocPoint;
             accRewardPerShare = accRewardPerShare + (
-                reward * (1e12) / (lpSupply)
+                reward * (1e12) / lpSupply
             );
         }
-        return
-            user.amount * (accRewardPerShare) / (1e12) - (
-                user.rewardDebt[_rewardToken]
-            );
+        return user.amount * accRewardPerShare / (1e12) - user.rewardDebt[_rewardToken];
     }
 
     // Update reward variables for all pools. Be careful of gas spending!
@@ -1379,9 +1374,7 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
     }
 
     function updatePool(uint256 _pid) public {
-        if(_pid >= poolInfo.length) {
-            revert InvalidPoolId();
-        }
+        require(_pid < poolInfo.length, "InvalidPoolId");
         PoolInfo storage pool = poolInfo[_pid];
         if (block.timestamp <= pool.lastRewardBlock) {
             return;
@@ -1405,31 +1398,25 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
                 block.timestamp
             );
             uint256 reward = multiplier
-                 * (rewardPerBlock[rewardToken])
-                 * (pool.allocPoint)
-                 / (totalAllocPoint);
+                * rewardPerBlock[rewardToken]
+                * pool.allocPoint
+                / totalAllocPoint;
             pool.accRewardPerShare[rewardToken] = pool
                 .accRewardPerShare[rewardToken]
-                 + (reward * (1e12) / (lpSupply));
+                + (reward * (1e12) / lpSupply);
         }
         pool.lastRewardBlock = block.timestamp;
     }
 
     function deposit(uint256 _pid, uint256 _amount) external nonReentrant {
-        if(_pid >= poolInfo.length) {
-            revert InvalidPoolId();
-        }
+        require(_pid < poolInfo.length, "InvalidPoolId");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         if (user.amount > 0) {
             for (uint256 i = 0; i < pool.rewardTokens.length; i++) {
                 address rewardToken = pool.rewardTokens[i];
-                uint256 pending = user
-                    .amount
-                     * (pool.accRewardPerShare[rewardToken])
-                     / (1e12)
-                     - (user.rewardDebt[rewardToken]);
+                uint256 pending = user.amount * pool.accRewardPerShare[rewardToken] / (1e12) - user.rewardDebt[rewardToken];
                 if (pending > 0) {
                     safeRewardTransfer(rewardToken, msg.sender, pending);
                 }
@@ -1442,7 +1429,7 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
                 _amount
             );
             if (pool.depositFeeBP > 0) {
-                uint256 depositFee = _amount * (pool.depositFeeBP) / 10000;
+                uint256 depositFee = _amount * pool.depositFeeBP / 10000;
                 pool.lpToken.safeTransfer(feeAddress, depositFee);
                 user.amount = user.amount + (_amount) -  (depositFee);
             } else {
@@ -1457,34 +1444,23 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
         }
         for (uint256 i = 0; i < pool.rewardTokens.length; i++) {
             address rewardToken = pool.rewardTokens[i];
-            user.rewardDebt[rewardToken] = user
-                .amount
-                 * (pool.accRewardPerShare[rewardToken])
-                 / (1e12);
+            user.rewardDebt[rewardToken] = user.amount * pool.accRewardPerShare[rewardToken] / (1e12);
         }
         emit Deposit(msg.sender, _pid, _amount);
     }
 
     // Withdraw LP tokens from MultiRewardMasterChef.
     function withdraw(uint256 _pid, uint256 _amount) external {
-        if(_pid >= poolInfo.length) {
-            revert InvalidPoolId();
-        }
+        require(_pid < poolInfo.length, "InvalidPoolId");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        if(user.amount < _amount){
-            revert WithdrawNotGood();
-        }
+        require(user.amount >= _amount, "WithdrawNotGood");
         uint256 balance = pool.lpToken.balanceOf(address(this));
         IStrategy strategy = strategies[_pid];
         updatePool(_pid);
         for (uint256 i = 0; i < pool.rewardTokens.length; i++) {
             address rewardToken = pool.rewardTokens[i];
-            uint256 pending = user
-                .amount
-                 * (pool.accRewardPerShare[rewardToken])
-                 / (1e12)
-                 - (user.rewardDebt[rewardToken]);
+            uint256 pending = user.amount * pool.accRewardPerShare[rewardToken] / (1e12) - user.rewardDebt[rewardToken];
             if (pending > 0) {
                 safeRewardTransfer(rewardToken, msg.sender, pending);
             }
@@ -1493,114 +1469,81 @@ contract AraMasterChefMultiReward is Ownable, ReentrancyGuard {
             user.amount = user.amount - (_amount);
             if (_amount > balance) {
                 uint256 missing = _amount - (balance);
-                uint256 withdrawn = strategy.withdraw(missing);
+                uint256 withdrawn = strategy.withdrawTokens(missing);
                 _amount = balance + (withdrawn);
             }
             pool.lpToken.safeTransfer(address(msg.sender), _amount);
         }
         for (uint256 i = 0; i < pool.rewardTokens.length; i++) {
             address rewardToken = pool.rewardTokens[i];
-            user.rewardDebt[rewardToken] = user
-                .amount
-                 * (pool.accRewardPerShare[rewardToken])
-                 / (1e12);
+            user.rewardDebt[rewardToken] = user.amount * pool.accRewardPerShare[rewardToken] / (1e12);
         }
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
-    function emergencyWithdraw(uint256 _pid) public {
-        if(_pid >= poolInfo.length) {
-            revert InvalidPoolId();
-        }
+    // Withdraw without caring about rewards. EMERGENCY ONLY.
+    function emergencyWithdraw(uint256 _pid) external {
+        require(_pid < poolInfo.length, "InvalidPoolId");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        uint256 amount = user.amount;
+        pool.lpToken.safeTransfer(
+            address(msg.sender),
+            user.amount
+        );
         user.amount = 0;
         for (uint256 i = 0; i < pool.rewardTokens.length; i++) {
             address rewardToken = pool.rewardTokens[i];
             user.rewardDebt[rewardToken] = 0;
         }
-        uint256 balance = pool.lpToken.balanceOf(address(this));
-        IStrategy strategy = strategies[_pid];
-        if (amount > balance) {
-            uint256 missing = amount -  (balance);
-            uint256 withdrawn = strategy.withdraw(missing);
-            amount = balance + (withdrawn);
-        }
-        pool.lpToken.safeTransfer(address(msg.sender), amount);
-        emit EmergencyWithdraw(msg.sender, _pid, amount);
+        emit EmergencyWithdraw(msg.sender, _pid, user.amount);
     }
 
+    // Safe reward transfer function, just in case if rounding error causes pool to not have enough REWARDs.
     function safeRewardTransfer(
         address _rewardToken,
         address _to,
         uint256 _amount
     ) internal {
         uint256 rewardBal = IERC20(_rewardToken).balanceOf(address(this));
-        if(!(rewardBal >= _amount && _amount > 0)){
-            revert InsufficientRewardTokens();
-        }
-        IERC20(_rewardToken).safeTransfer(_to, rewardBal);
+        require(_amount <= rewardBal, "NotEnoughRewardBalance");
+        IERC20(_rewardToken).transfer(_to, _amount);
     }
-
-    function setFeeAddress(address _feeAddress) external {
-        if(msg.sender != feeAddress){
-            revert ForbiddenSetFeeAddr();
-        }
-        feeAddress = _feeAddress;
-        emit SetFeeAddress(_feeAddress);
-    }
-
-    function _depositAllToStrategy(uint256 _pid, IStrategy _strategy) internal {
-        IERC20 _lpToken = lpToken[_pid];
-        uint256 _strategyBalanceBefore = _strategy.balanceOf();
-        uint256 _balanceBefore = _lpToken.balanceOf(address(this));
-        if(address(_lpToken) != _strategy.want()){
-            revert WrongLpToken();
-        }
-
-        if (_balanceBefore > 0) {
-            _lpToken.safeTransfer(address(_strategy), _balanceBefore);
-            _strategy.deposit();
-
-            uint256 _strategyBalanceAfter = _strategy.balanceOf();
-            uint256 _strategyBalanceDiff = _strategyBalanceAfter -  (
-                _strategyBalanceBefore
-            );
-
-            if(_strategyBalanceDiff != _balanceBefore){
-                revert DifferentBalance();
-            }
-
-            uint256 _balanceAfter = _lpToken.balanceOf(address(this));
-            if(_balanceAfter != 0){
-                revert NotZeroBalance();
-            }
-        }
-    }
-
+    
     function _withdrawAllFromStrategy(
         uint256 _pid,
         IStrategy _strategy
     ) internal {
-        IERC20 _lpToken = lpToken[_pid];
-        uint256 _strategyBalance = _strategy.balanceOf();
-        if(address(_lpToken) != _strategy.want()){
-            revert WrongLpToken();
-        }
+        _strategy.withdrawAll();
+        uint256 _amount = poolInfo[_pid].lpToken.balanceOf(address(this));
+        userInfo[_pid][address(_strategy)] = UserInfo({
+            amount: 0,
+            rewardDebt: userInfo[_pid][address(_strategy)].rewardDebt
+        });
+        emit Withdraw(address(_strategy), _pid, _amount);
+    }
 
-        if (_strategyBalance > 0) {
-            _strategy.withdraw(_strategyBalance);
-            uint256 _currentBalance = _lpToken.balanceOf(address(this));
+    function _depositAllToStrategy(
+        uint256 _pid,
+        IStrategy _strategy
+    ) internal {
+        uint256 _amount = poolInfo[_pid].lpToken.balanceOf(address(this));
+        poolInfo[_pid].lpToken.safeTransfer(
+            address(_strategy),
+            _amount
+        );
+        _strategy.deposit();
+        userInfo[_pid][address(_strategy)] = UserInfo({
+            amount: _amount,
+            rewardDebt: userInfo[_pid][address(_strategy)].rewardDebt
+        });
+        emit Deposit(address(_strategy), _pid, _amount);
+    }
 
-            if(_currentBalance < _strategyBalance){
-                revert InsufficientBalance();
-            }
-
-            _strategyBalance = _strategy.balanceOf();
-            if(_strategyBalance > 0){
-                revert NotZeroBalance();
-            }
-        }
+    function setFeeAddress(address _feeAddress) external onlyOwner {
+        require(_feeAddress != address(0), "ZERO_ADDRESS");
+        feeAddress = _feeAddress;
+        emit SetFeeAddress(_feeAddress);
     }
 }
+
+

@@ -973,6 +973,8 @@ contract ve is IERC721, IERC721Metadata, Ownable {
     }
 }
 
+pragma solidity ^0.8.0;
+
 contract AraEmissionDistributor is AccessControl, Ownable {
     using SafeERC20 for IERC20;
 
@@ -989,6 +991,7 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256 allocPoint; // How many allocation points assigned to this pool. the fraction AnotherToken to distribute per block.
         uint256 lastRewardBlock; // Last block number that AnotherToken distribution occurs.
         uint256 accAnotherTokenPerShare; // Accumulated ARA per araFractalV2. this is multiplied by ACC_ANOTHERTOKEN_PRECISION for more exact results (rounding errors)
+        uint256 totalSupply; // Total supply of deposits in the pool.
     }
 
     struct UserInfoAnotherToken {
@@ -1052,8 +1055,6 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         uint256 lastRewardBlock,
         uint256 accARAPerShare
     );
-
-    /* General Events */
     event EmergencyWithdraw(
         address indexed user,
         uint256 indexed pid,
@@ -1113,12 +1114,14 @@ contract AraEmissionDistributor is AccessControl, Ownable {
             ACC_ANOTHERTOKEN_PRECISION;
         /*******************************************************************/
 
+        // Update total supply for the pool
+        poolInfoAnotherToken[_pid].totalSupply += amount;
+
         // Push the tokenInfo to the tokenInfo array
         tokenInfo[tokenInfoCount] = TokenInfo({user: msg.sender, numberNFT: _tokenId});
         tokenInfoCount ++;
 
-        // Events
-        // Emit events for deposit
+        // Emit events
         emit DepositAnotherToken(msg.sender, _pid, amount, msg.sender);
     }
 
@@ -1141,10 +1144,16 @@ contract AraEmissionDistributor is AccessControl, Ownable {
     }
 
     function withdrawAndDistribute(uint256 _pid, uint256 _tokenId) external {
-        // AnotherToken Rewards attributes
         if(_pid >= totalPidsAnotherToken) {
             revert InvalidPoolId();
         }
+        // Check if msg.sender is the owner of the veARA
+        address ownerOfTokenId = IERC721(araFractalV2).ownerOf(_tokenId);
+        if(ownerOfTokenId != msg.sender) {
+            revert NotOwnerOfveARA();
+        }
+
+        // AnotherToken Rewards attributes
         PoolInfoAnotherToken memory poolAnotherToken = updatePoolAnotherToken(
             _pid
         );
@@ -1193,7 +1202,10 @@ contract AraEmissionDistributor is AccessControl, Ownable {
 
         totalNftsByUser[msg.sender] = totalNftsByUser[msg.sender] - 1;
 
-        // Events
+        // Update total supply for the pool
+        poolInfoAnotherToken[_pid].totalSupply -= amount;
+
+        // Emit events
         emit WithdrawAnotherToken(msg.sender, _pid, amount, msg.sender);
     }
 
@@ -1204,6 +1216,12 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         if(_pid >= totalPidsAnotherToken) {
             revert InvalidPoolId();
         }
+        // Check if msg.sender is the owner of the veARA
+        address ownerOfTokenId = IERC721(araFractalV2).ownerOf(_tokenId);
+        if(ownerOfTokenId != msg.sender) {
+            revert NotOwnerOfveARA();
+        }
+
         // Get the current pool information for the specified pid
         PoolInfoAnotherToken memory poolAnotherToken = updatePoolAnotherToken(
             _pid
@@ -1238,6 +1256,12 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         if(_pid >= totalPidsAnotherToken) {
             revert InvalidPoolId();
         }
+        // Check if msg.sender is the owner of the veARA
+        address ownerOfTokenId = IERC721(araFractalV2).ownerOf(_tokenId);
+        if(ownerOfTokenId != msg.sender) {
+            revert NotOwnerOfveARA();
+        }
+
         // Get the current user's information for the specified pid and tokenId
         UserInfoAnotherToken storage userAnotherToken = userInfoAnotherToken[
             _pid
@@ -1269,6 +1293,12 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         }
 
         totalNftsByUser[msg.sender] = totalNftsByUser[msg.sender] - 1;
+
+        // Update total supply for the pool
+        poolInfoAnotherToken[_pid].totalSupply -= userAnotherToken.amount;
+
+        // Emit an event
+        emit EmergencyWithdraw(msg.sender, _pid, userAnotherToken.amount);
     }
 
     // Add a new AnotherToken to the pool. Can only be called by the owner.
@@ -1284,7 +1314,8 @@ contract AraEmissionDistributor is AccessControl, Ownable {
                 anotherTokenPerBlock: _anotherTokenPerBlock,
                 allocPoint: _allocPoint,
                 lastRewardBlock: block.number,
-                accAnotherTokenPerShare: 0
+                accAnotherTokenPerShare: 0,
+                totalSupply: 0
             });
 
         totalPidsAnotherToken++;
@@ -1334,93 +1365,56 @@ contract AraEmissionDistributor is AccessControl, Ownable {
         // Get the accumulated AnotherToken per LP token
         uint256 accAnotherTokenPerShare = poolAnotherToken
             .accAnotherTokenPerShare;
-        // Calculate the pending AnotherToken rewards for the user based on their staked LP tokens and
-        // subtracting any rewards they are not eligible for or have already claimed
-        uint256 anotherTokenSupply = IERC20(
-            poolInfoAnotherToken[_pid].tokenReward
-        ).balanceOf(address(this));
-
-        if (
-            block.number > poolAnotherToken.lastRewardBlock &&
-            anotherTokenSupply > 0
-        ) {
-            uint256 blocksSinceLastReward = block.number -
-                poolAnotherToken.lastRewardBlock;
-            // based on the pool weight (allocation points) we calculate the anotherToken rewarded for this specific pool
-            uint256 anotherTokenRewards = (blocksSinceLastReward +
-                poolAnotherToken.anotherTokenPerBlock *
-                poolAnotherToken.allocPoint) / totalAnotherAllocPoint;
-            // we take parts of the rewards for treasury, these can be subject to change, so we recalculate it a value of 1000 = 100%
-            uint256 anotherTokenRewardsForPool = (anotherTokenRewards *
-                POOL_PERCENTAGE) / DENOMINATOR;
-
-            // we calculate the new amount of accumulated anotherToken per veARA
-            accAnotherTokenPerShare =
-                accAnotherTokenPerShare +
-                ((anotherTokenRewardsForPool * ACC_ANOTHERTOKEN_PRECISION) /
-                    anotherTokenSupply);
-        }
-        // Calculate the pending AnotherToken rewards for the user based on their staked LP tokens and subtracting any rewards they are not eligible for or have already claimed
+        // Calculate the pending AnotherToken rewards for the user based on their staked LP tokens and reward debt
         pending =
-            (userAnotherToken.amount * accAnotherTokenPerShare) /
-            ACC_ANOTHERTOKEN_PRECISION -
+            ((userAnotherToken.amount * accAnotherTokenPerShare) /
+                ACC_ANOTHERTOKEN_PRECISION) -
             userAnotherToken.rewardDebt;
     }
 
-    // Update reward variables of the given anotherToken pool to be up-to-date.
-    function updatePoolAnotherToken(
-        uint256 _pid
-    ) public returns (PoolInfoAnotherToken memory poolAnotherToken) {
-        poolAnotherToken = poolInfoAnotherToken[_pid];
-
-        if (block.number > poolAnotherToken.lastRewardBlock) {
-            // total of AnotherTokens staked for this pool
-            uint256 anotherTokenSupply = IERC20(
-                poolInfoAnotherToken[_pid].tokenReward
-            ).balanceOf(address(this));
-            if (anotherTokenSupply > 0) {
-                uint256 blocksSinceLastReward = block.number -
-                    poolAnotherToken.lastRewardBlock;
-
-                // rewards for this pool based on his allocation points
-                uint256 anotherTokenRewards = (blocksSinceLastReward *
-                    poolAnotherToken.anotherTokenPerBlock *
-                    poolAnotherToken.allocPoint) / totalAnotherAllocPoint;
-
-                uint256 anotherTokenRewardsForPool = (anotherTokenRewards *
-                    POOL_PERCENTAGE) / DENOMINATOR;
-
-                poolAnotherToken.accAnotherTokenPerShare =
-                    poolAnotherToken.accAnotherTokenPerShare +
-                    ((anotherTokenRewardsForPool * ACC_ANOTHERTOKEN_PRECISION) /
-                        anotherTokenSupply);
-            }
-            poolAnotherToken.lastRewardBlock = block.number;
-            poolInfoAnotherToken[_pid] = poolAnotherToken;
-
-            emit LogUpdatePoolAnotherToken(
-                _pid,
-                poolAnotherToken.lastRewardBlock,
-                poolAnotherToken.accAnotherTokenPerShare
-            );
-        }
-    }
-
-    // Safe anotherToken transfer function, just in case if rounding error causes pool to not have enough anotherToken.
+    // Safe AnotherToken transfer function, just in case if rounding error causes pool to not have enough AnotherTokens.
     function safeAnotherTokenTransfer(
         uint256 _pid,
         address _to,
         uint256 _amount
     ) internal {
-        // Get the specified anotherToken pool
-        PoolInfoAnotherToken memory pool = poolInfoAnotherToken[_pid];
-        // Check the balance of anotherToken in the pool
-        uint256 anotherTokenBalance = IERC20(pool.tokenReward).balanceOf(
+        PoolInfoAnotherToken storage poolAnotherToken = poolInfoAnotherToken[
+            _pid
+        ];
+        uint256 anotherTokenBal = IERC20(poolAnotherToken.tokenReward).balanceOf(
             address(this)
         );
-        if(!(anotherTokenBalance >= _amount && _amount > 0)) {
-            revert InsufficientRewardtokens();
+        if (_amount > anotherTokenBal) {
+            IERC20(poolAnotherToken.tokenReward).transfer(_to, anotherTokenBal);
+        } else {
+            IERC20(poolAnotherToken.tokenReward).transfer(_to, _amount);
         }
-        IERC20(pool.tokenReward).safeTransfer(_to, anotherTokenBalance);
+    }
+
+    // Function to update the rewards in a specific pool
+    function updatePoolAnotherToken(uint256 _pid)
+        internal
+        returns (PoolInfoAnotherToken memory)
+    {
+        PoolInfoAnotherToken storage poolAnotherToken = poolInfoAnotherToken[
+            _pid
+        ];
+        if (block.number <= poolAnotherToken.lastRewardBlock) {
+            return poolAnotherToken;
+        }
+        uint256 lpSupply = poolAnotherToken.totalSupply;
+        if (lpSupply == 0) {
+            poolAnotherToken.lastRewardBlock = block.number;
+            return poolAnotherToken;
+        }
+        uint256 multiplier = block.number - poolAnotherToken.lastRewardBlock;
+        uint256 anotherTokenReward = multiplier *
+            poolAnotherToken.anotherTokenPerBlock;
+        poolAnotherToken.accAnotherTokenPerShare =
+            poolAnotherToken.accAnotherTokenPerShare +
+            ((anotherTokenReward * ACC_ANOTHERTOKEN_PRECISION) / lpSupply);
+        poolAnotherToken.lastRewardBlock = block.number;
+        return poolAnotherToken;
     }
 }
+

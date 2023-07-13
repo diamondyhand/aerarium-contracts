@@ -2613,10 +2613,11 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
 
     function safeARATransfer(address _to, uint256 _amount) internal {
         uint256 araBalance = ara.balanceOf(address(this));
-        if(!(araBalance >= _amount && _amount > 0)) {
-            revert InsufficientRewardtokens();
+        if(_amount > araBalance){
+            revert NotEnoughRewardBalance();
+        } else {
+            ara.safeTransfer(_to, _amount);
         }
-        ara.safeTransfer(_to, araBalance);
     }
 
     receive() external payable {}
@@ -2653,3 +2654,4 @@ contract aHUM is ERC20("AraFi Hummus Token", "aHUM"), AccessControl, Ownable {
         emit WithdrawETH(address(msg.sender), amount);
     }
 }
+
